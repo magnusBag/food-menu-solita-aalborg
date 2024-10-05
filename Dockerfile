@@ -14,8 +14,7 @@ COPY . .
 # Compile the Deno project
 RUN deno cache main.ts
 
-ENV PORT=80
 
-EXPOSE $PORT
+EXPOSE 3000
 # Run the app
-CMD ["deno", "run", "--allow-net", "--allow-read", "main.ts", "$PORT"]
+CMD ["deno", "run", "--allow-net", "--allow-read", "main.ts", "3000"]
