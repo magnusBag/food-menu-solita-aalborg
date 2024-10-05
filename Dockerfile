@@ -14,7 +14,7 @@ COPY . .
 # Compile the Deno project
 RUN deno cache main.ts
 
-ENV PORT=3000
+ENV PORT=80
 
 EXPOSE $PORT
 # Run the app
