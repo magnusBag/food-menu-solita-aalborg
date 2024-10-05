@@ -14,5 +14,6 @@ const handler = async (request: Request): Promise<Response> => {
   return new Response("Not Found", { status: 404 });
 };
 
-console.log(`HTTP webserver running. Access it at: http://localhost:${port}/`);
-await Deno.serve({ port }, handler);
+const serverPort = Deno.args.length > 0 ? parseInt(Deno.args[0]) : 8000;
+console.log(`HTTP webserver running. Access it at: http://localhost:${serverPort}/`);
+await Deno.serve({ port: serverPort }, handler);
