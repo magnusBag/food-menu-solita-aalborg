@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "net": true,
+    "env": true,
+    "read": true,
+    "write": true
+  }
+}

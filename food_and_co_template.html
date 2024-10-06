@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>MBA menu</title>
+    <script>
+      function toggleDay(dayId) {
+        var element = document.getElementById(dayId);
+        var dishes = element.querySelector('.dishes');
+        element.classList.toggle('minimized');
+        
+        if (element.classList.contains('minimized')) {
+          dishes.style.maxHeight = '0';
+        } else {
+          dishes.style.maxHeight = dishes.scrollHeight + 'px';
+        }
+      }
+    </script>
+    <style>
+      body { font-family: 'Arial', sans-serif; color: #333; }
+      .menu-container { max-width: 800px; margin: auto; padding: 20px; }
+      h1 { text-align: center; color: #007bff; font-weight: normal; }
+      .day-container { background-color: #ffffff; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin-bottom: 20px; padding: 15px; }
+      .day { font-weight: bold; font-size: 1.2em; cursor: pointer; }
+      ul { list-style-type: none; padding: 0; margin-left: 20px; }
+      .dish { display: flex; align-items: center; border-bottom: 1px solid #eaeaea; padding: 10px 0; }
+      .dish:last-child { border-bottom: none; }
+      .dish-info { flex-grow: 1; font-style: italic; }
+      .dish-image img { border-radius: 5px; max-width: 150px; max-height: 150px; margin-left: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+      .dishes { overflow: hidden; transition: max-height 0.5s ease-out; max-height: 0; }
+      .day-container:not(.minimized) .dishes { max-height: 1000px; }
+      li.dish { transform: translateY(20px); opacity: 0; transition: transform 0.3s ease-out, opacity 0.3s ease-out; }
+      .day-container:not(.minimized) li.dish { transform: translateY(0); opacity: 1; }
+      .day-container:not(.minimized) li.dish:nth-child(1) { transition-delay: 0.1s; }
+      .day-container:not(.minimized) li.dish:nth-child(2) { transition-delay: 0.2s; }
+      .day::before {
+        content: '▼';
+        display: inline-block;
+        margin-right: 5px;
+        transition: transform 0.3s ease-out;
+      }
+      .day-container.minimized .day::before {
+        transform: rotate(-90deg);
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Weekly Menu</h1>
+    <div class="menu-container">
+      {{MENU_CONTENT}}
+    </div>
+  </body>
+</html>

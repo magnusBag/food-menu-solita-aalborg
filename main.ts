@@ -1,14 +1,17 @@
-
-const port = 8000;
+import { foodAndCoNorth } from "./foodAndCoNorth.ts";
+import { foodAndCoNorthNiceFormat } from "./foodAndCoNorthNiceFormat.ts";
 
 const handler = async (request: Request): Promise<Response> => {
   const url = new URL(request.url);
   
-  if (url.pathname === "/" || url.pathname === "/index.html") {
-    const html = await Deno.readTextFile("./index.html");
-    return new Response(html, {
-      headers: { "content-type": "text/html" },
-    });
+  
+  if (url.pathname === "/") {
+    return await foodAndCoNorthNiceFormat(request);
+  }
+  
+  
+  if (url.pathname === "/json-format") {
+    return await foodAndCoNorth(request);
   }
   
   return new Response("Not Found", { status: 404 });

@@ -17,4 +17,4 @@ RUN deno cache main.ts
 
 EXPOSE 3000
 # Run the app
-CMD ["deno", "run", "--allow-net", "--allow-read", "main.ts", "3000"]
+CMD ["deno", "run", "--allow-net", "--allow-read", "--allow-env","--allow-sys", "main.ts", "3000"]
