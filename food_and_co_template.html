@@ -2,6 +2,7 @@
 <html>
   <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MBA menu</title>
     <script>
       function toggleDay(dayId) {
@@ -128,14 +129,15 @@
         color: var(--text-color);
         background-color: var(--background-color);
         transition: background-color var(--transition-speed) ease;
+        font-size: 18px;
       }
 
       .menu-container { 
-        max-width: 800px; 
+        max-width: 100%; 
         margin: auto; 
-        padding: 20px;
+        padding: 5px;
         display: grid;
-        gap: 20px;
+        gap: 10px;
       }
 
       h1 { 
@@ -143,18 +145,18 @@
         color: var(--primary-color); 
         font-weight: 300;
         font-size: 2.5em;
-        margin-bottom: 30px;
+        margin-bottom: 20px;
         position: relative;
       }
 
       h1::after {
         content: '';
         position: absolute;
-        bottom: -10px;
+        bottom: -8px;
         left: 50%;
         transform: translateX(-50%);
         width: 50px;
-        height: 3px;
+        height: 4px;
         background-color: var(--primary-color);
       }
 
@@ -162,41 +164,146 @@
         background-color: #ffffff; 
         border-radius: 15px; 
         box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-        margin-bottom: 20px; 
-        padding: 20px;
+        margin-bottom: 10px; 
+        padding: 10px;
         transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
-      }
-
-      .day-container:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 30px rgba(0,0,0,0.15);
       }
 
       .day { 
         font-weight: bold; 
-        font-size: 1.3em; 
+        font-size: 2em; 
         cursor: pointer;
         display: flex;
         align-items: center;
         transition: color var(--transition-speed) ease;
-      }
-
-      .day:hover {
-        color: var(--primary-color);
+        margin-bottom: 10px;
       }
 
       ul { 
         list-style-type: none; 
         padding: 0; 
-        margin-left: 20px;
+        margin-left: 5px;
       }
 
       .dish { 
         display: flex; 
+        flex-direction: column;
         align-items: center; 
         border-bottom: 1px solid #eaeaea; 
-        padding: 15px 0;
+        padding: 10px 0;
         transition: background-color var(--transition-speed) ease;
+      }
+
+      .dish-info { 
+        flex-grow: 1; 
+        font-style: italic;
+        margin: 0.5rem 0;
+        font-size: 1.6em;
+        line-height: 1.4;
+      }
+
+      .dish-image img { 
+        border-radius: 10px; 
+        max-width: 100%;
+        max-height: 250px; 
+        margin: 0;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: transform var(--transition-speed) ease;
+      }
+
+      #theme-toggle,
+      #language-toggle {
+        position: fixed;
+        top: 20px;
+        font-size: 32px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        z-index: 1000;
+        transition: transform var(--transition-speed) ease;
+      }
+
+      #theme-toggle {
+        right: 20px;
+      }
+
+      #language-toggle {
+        right: 60px;
+      }
+
+      .fullscreen-view img {
+        margin-top: 30%;
+      }
+
+      /* Media query for larger screens */
+      @media (min-width: 768px) {
+
+        .menu-container { 
+          max-width: 800px; 
+          padding: 20px;
+          gap: 20px;
+        }
+
+        .day-container { 
+          padding: 20px;
+          margin-bottom: 20px; 
+        }
+
+        .day-container:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+
+        .dish { 
+          flex-direction: row;
+          align-items: center;
+          justify-content: flex-start; 
+          padding: 15px 0;
+        }
+
+        .dish-info { 
+          margin: 1rem;
+          font-size: 1em;
+        }
+
+        .dish-image img { 
+          max-width: 150px; 
+          max-height: 150px; 
+          margin-left: 20px; 
+          margin-right: 1rem;
+        }
+
+        .day {
+          font-size: 1.3em;
+          margin-bottom: 0;
+        }
+
+        body {
+          font-size: 16px;
+        }
+
+        h1 {
+          font-size: 2.5em;
+          margin-bottom: 30px;
+        }
+
+        h1::after {
+          bottom: -10px;
+          height: 3px;
+        }
+
+        #theme-toggle,
+        #language-toggle {
+          font-size: 24px;
+        }
+
+        .fullscreen-view img {
+          margin-top: 5%;
+        }
+      }
+
+      .day:hover {
+        color: var(--primary-color);
       }
 
       .dish:hover {
@@ -205,22 +312,6 @@
 
       .dish:last-child { 
         border-bottom: none; 
-      }
-
-      .dish-info { 
-        flex-grow: 1; 
-        font-style: italic;
-        margin: 1rem;
-      }
-
-      .dish-image img { 
-        border-radius: 10px; 
-        max-width: 150px; 
-        max-height: 150px; 
-        margin-left: 20px; 
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        transition: transform var(--transition-speed) ease;
-        margin-right: 1rem;
       }
 
       .dish-image img:hover {
@@ -294,51 +385,12 @@
         background-color: rgba(255,255,255,0.05);
       }
 
-      #theme-toggle {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: none;
-        border: none;
-        font-size: 24px;
-        cursor: pointer;
-        z-index: 1000;
-        transition: transform var(--transition-speed) ease;
-      }
-
       #theme-toggle:hover {
         transform: scale(1.1);
       }
 
-      #language-toggle {
-        position: fixed;
-        top: 20px;
-        right: 60px;
-        background: none;
-        border: none;
-        font-size: 24px;
-        cursor: pointer;
-        z-index: 1000;
-        transition: transform var(--transition-speed) ease;
-      }
-
       #language-toggle:hover {
         transform: scale(1.1);
-      }
-
-      @media (max-width: 600px) {
-        .menu-container {
-          padding: 10px;
-        }
-
-        .day-container {
-          padding: 15px;
-        }
-
-        .dish-image img {
-          max-width: 100px;
-          max-height: 100px;
-        }
       }
 
       .fullscreen-view {
