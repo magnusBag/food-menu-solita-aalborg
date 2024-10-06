@@ -119,6 +119,9 @@ async function translateMenu(daysMenu: DayMenu[]): Promise<DayMenu[]> {
 }
 
 export function generateMenuHtml(daysMenu: DayMenu[], startIndex = 0): string {
+    if (!daysMenu.length) {
+        return `<div class="no-menu" data-en="Menu will be here soon..." data-da="Menu kommer snart...">Menu kommer snart...</div>`;
+    }
     return daysMenu
         .map(
             (day, index) => `

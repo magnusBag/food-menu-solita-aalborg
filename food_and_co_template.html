@@ -92,6 +92,11 @@
         
         currentWeekTitle.textContent = isEnglish ? currentWeekTitle.getAttribute('data-en') : currentWeekTitle.getAttribute('data-da');
         nextWeekTitle.textContent = isEnglish ? nextWeekTitle.getAttribute('data-en') : nextWeekTitle.getAttribute('data-da');
+
+        const noMenu = document.querySelector('.no-menu');
+        if (noMenu) {
+          noMenu.textContent = isEnglish ? noMenu.getAttribute('data-en') : noMenu.getAttribute('data-da');
+        }
       }
 
       // Load theme preference and add click events to images when the page loads
@@ -258,6 +263,11 @@
 
       .day-container.minimized .day::before {
         transform: rotate(-90deg);
+      }
+      .no-menu {
+        text-align: center;
+        font-style: italic;
+        color: var(--secondary-color);
       }
 
       /* Dark theme styles */
