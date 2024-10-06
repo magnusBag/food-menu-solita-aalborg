@@ -1,18 +1,23 @@
-import { DayMenu, Dish, WeeklyMenu } from "../models.ts";
+import { DayMenu, Dish, WeeklyMenu } from "./models.ts";
 
 const baseUrl = "https://www.shop.foodandco.dk/api/WeeklyMenu";
 
-export async function getNextWeekMenu(
+export async function getWeekMenu(
+    when: "now" | "next",
     restaurantId: number = 1073,
     languageCode: string = "da-DK",
 ): Promise<DayMenu[]> {
-    const nextMonday = getNextMonday();
+    const date = when === "now"
+        ? new Date().toISOString().split("T")[0]
+        : getNextMonday();
     const url =
-        `${baseUrl}?restaurantId=${restaurantId}&languageCode=${languageCode}&date=${nextMonday}`;
+        `${baseUrl}?restaurantId=${restaurantId}&languageCode=${languageCode}&date=${date}`;
+
     const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
     }
+
     const res = await response.json();
     const weeklyMenu = mapToWeeklyMenu(res);
     return weeklyMenu.days;

@@ -1,20 +1,19 @@
 import { Application, Router } from "jsr:@oak/oak/";
-import { foodAndCoNorth } from "./foodAndCoNorth.ts";
-import { foodAndCoNorthNiceFormat } from "./foodAndCoNorthNiceFormat.ts";
+import { foodAndCoMenuParser } from "./foodAndCoMenuParser.ts";
 
 const app = new Application();
 const router = new Router();
 router
   .get("/", async (context) => {
-    const response = await foodAndCoNorthNiceFormat();
+    const response = await foodAndCoMenuParser("html");
     context.response.headers.set("Content-Type", "text/html");
     context.response.body = response.body;
   })
   .get("/json-format", async (context) => {
-    const response = await foodAndCoNorth();
+    const response = await foodAndCoMenuParser("json");
     context.response.headers.set("Content-Type", "application/json");
     context.response.body = response.body;
-  })
+  });
 
 app.use(router.routes());
 app.use(router.allowedMethods());
@@ -25,6 +24,8 @@ app.use((context) => {
 });
 
 const serverPort = Deno.args.length > 0 ? parseInt(Deno.args[0]) : 8000;
-console.log(`HTTP webserver running. Access it at: http://localhost:${serverPort}/`);
+console.log(
+  `HTTP webserver running. Access it at: http://localhost:${serverPort}/`,
+);
 
 await app.listen({ port: serverPort });
