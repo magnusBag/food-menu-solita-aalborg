@@ -134,7 +134,9 @@ export function generateMenuHtml(daysMenu: DayMenu[], startIndex = 0): string {
                     .map(
                         (dish) => `
           <li class="dish">
-            <div class="dish-info"><strong>${dish.type}</strong>: ${dish.name}</div>
+            <div class="dish-info" data-name="${dish.name}" data-name-en="${
+                            dish.nameEn || dish.name
+                        }"><strong>${dish.type}</strong>: ${dish.name}</div>
             ${
                             dish.picUrl
                                 ? `<div class="dish-image"><img src="${dish.picUrl}" alt="${dish.name}"></div>`
