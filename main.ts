@@ -9,7 +9,7 @@ router
     context.response.headers.set("Content-Type", "text/html");
     context.response.body = response.body;
   })
-  .get("/json-format", async (context) => {
+  .get("/api", async (context) => {
     const response = await foodAndCoMenuParser("json");
     context.response.headers.set("Content-Type", "application/json");
     context.response.body = response.body;
