@@ -9,17 +9,20 @@ export function getWeekNumber(): [number, number] {
 }
 
 export function isPastDate(day: string): boolean {
-    const [dayNum, monthName] = day.match(/(\d+)\. (\w+)/)?.slice(1) || [];
     const currentDate = new Date();
-    const dayDate = new Date(
-        `${monthName} ${dayNum}, ${currentDate.getFullYear()} 12:00:00`,
-    );
-
-    if (dayDate.toDateString() === currentDate.toDateString()) {
+    const [dayNum, monthName] = day.match(/(\d+)\. (\w+)/)?.slice(1) || [];
+    let dateToCompare;
+    if (!dayNum || !monthName) {
+        dateToCompare = new Date(day);
+    } else {
+        dateToCompare = new Date(
+            `${monthName} ${dayNum}, ${currentDate.getFullYear()} 12:00:00`,
+        );
+    }
+    if (dateToCompare.toDateString() === currentDate.toDateString()) {
         return currentDate.getHours() >= 12;
     }
-
-    return dayDate < currentDate;
+    return dateToCompare < currentDate;
 }
 
 export function formatDate(date: string): string {

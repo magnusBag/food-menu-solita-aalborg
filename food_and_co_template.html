@@ -15,6 +15,29 @@
           dishes.style.maxHeight = dishes.scrollHeight + 'px';
         }
       }
+
+      function toggleTheme() {
+        document.body.classList.toggle('dark-theme');
+        const isDarkTheme = document.body.classList.contains('dark-theme');
+        localStorage.setItem('darkTheme', isDarkTheme);
+        updateThemeToggle();
+      }
+
+      function updateThemeToggle() {
+        const toggle = document.getElementById('theme-toggle');
+        toggle.textContent = document.body.classList.contains('dark-theme') ? '☀️' : '🌙';
+      }
+
+      function loadThemePreference() {
+        const isDarkTheme = localStorage.getItem('darkTheme') === 'true';
+        if (isDarkTheme) {
+          document.body.classList.add('dark-theme');
+        }
+        updateThemeToggle();
+      }
+
+      // Load theme preference when the page loads
+      window.addEventListener('DOMContentLoaded', loadThemePreference);
     </script>
     <style>
       body { font-family: 'Arial', sans-serif; color: #333; }
@@ -42,9 +65,40 @@
       .day-container.minimized .day::before {
         transform: rotate(-90deg);
       }
+
+      /* Dark theme styles */
+      body.dark-theme {
+        background-color: #1a1a1a;
+        color: #f0f0f0;
+      }
+
+      body.dark-theme h1 {
+        color: #4da6ff;
+      }
+
+      body.dark-theme .day-container {
+        background-color: #2a2a2a;
+        box-shadow: 0 4px 8px rgba(255,255,255,0.1);
+      }
+
+      body.dark-theme .dish {
+        border-bottom-color: #444;
+      }
+
+      #theme-toggle {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        z-index: 1000;
+      }
     </style>
   </head>
   <body>
+    <button id="theme-toggle" onclick="toggleTheme()">🌙</button>
     <h1>Weekly Menu</h1>
     <div class="menu-container">
       {{MENU_CONTENT}}
