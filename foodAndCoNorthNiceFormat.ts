@@ -97,19 +97,17 @@ async function getDataFromBlobStorage(
 
 async function createImageFromPrompt(
     prompt: string,
-    blobName: string,
-    model = "dall-e-3",
+    FileHint: string,
 ): Promise<string> {
-    const imageSize = model === "dall-e-3" ? "1024x1024" : "512x512";
     let response;
     try {
         response = await fetch(OPENAI_API_URL, {
             method: "POST",
             body: JSON.stringify({
-                model,
+                model: "dall-e-3",
                 prompt,
                 n: 1,
-                size: imageSize,
+                size: "1024x1024",
                 response_format: "b64_json",
             }),
             headers: {
@@ -118,50 +116,30 @@ async function createImageFromPrompt(
             },
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok && response.status === 429) {
+            console.log("Retrying after 1 min", { prompt, FileHint });
+            await new Promise((resolve) => setTimeout(resolve, 61000));
+            return createImageFromPrompt(prompt, FileHint);
         }
 
         const data = await response.json();
 
         if (!data.data || !data.data[0] || !data.data[0].b64_json) {
             console.error("Unexpected response format from OpenAI API:", data);
-            return ""; // Return an empty string or a default image URL
+            return "";
         }
 
         const base64 = data.data[0].b64_json;
-        return uploadBase64ImageToBlobStorage(base64, blobName);
+        return "data:image/png;base64, " + base64;
     } catch (error) {
-        if (error.response?.status === 429) {
-            console.log("Retrying after 1 min", { prompt, blobName });
-            await new Promise((resolve) => setTimeout(resolve, 61000));
-            return createImageFromPrompt(prompt, blobName);
-        }
         console.error("Error in createImageFromPrompt:", error);
-        return ""; // Return an empty string or a default image URL
+        return "";
     }
-}
-
-async function uploadBase64ImageToBlobStorage(
-    base64: string,
-    blobName: string,
-    containerName = "food-images",
-): Promise<string> {
-    const blobServiceClient = new BlobServiceClient(
-        Deno.env.get("AZURE_STORAGE_CONNECTION_STRING") || "",
-    );
-    const containerClient = blobServiceClient.getContainerClient(containerName);
-
-    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
-    await blockBlobClient.upload(base64, base64.length, {
-        blobHTTPHeaders: { blobContentType: "image/png" },
-    });
-    return blockBlobClient.url;
 }
 
 async function processMenuWithPics(
     daysMenu: DayMenu[],
-    blobFolder: string,
+    FileHint: string,
 ): Promise<DayMenu[]> {
     const daysMenuWithPics = await Promise.all(
         daysMenu.map(async (day, dayIndex) => {
@@ -172,9 +150,12 @@ async function processMenuWithPics(
                         : dish.name;
                     const picUrl = await createImageFromPrompt(
                         prompt,
-                        `${blobFolder}/${dayIndex}-${dishIndex}.png`,
+                        `${FileHint} - ${dayIndex}-${dishIndex}.png`,
                     );
-                    return { ...dish, picUrl };
+                    return {
+                        ...dish,
+                        picUrl,
+                    };
                 }),
             );
             return { ...day, dishes: dishesWithPics };
@@ -186,33 +167,30 @@ async function processMenuWithPics(
 export async function foodAndCoNorthNiceFormat(): Promise<Response> {
     try {
         const [year, week] = getWeekNumber();
-        const blobName = `menu-${year}-${week}`;
-        let menuData = await getDataFromBlobStorage(blobName + ".json");
+        const blobName = `menu-${year}-${week}.json`;
+        let menuData = await getDataFromBlobStorage(blobName);
         if (!menuData) {
             menuData = await getDataFromFoodAndCoWebPage();
-            menuData = await processMenuWithPics(menuData, blobName + ".json");
+            menuData = await processMenuWithPics(menuData, blobName);
             await uploadToBlobStorage(
                 JSON.stringify(menuData),
-                blobName + ".json",
+                blobName,
             );
         }
 
-        const nextWeekBlobName = `menu-${year}-${week + 1}`;
+        const nextWeekBlobName = `menu-${year}-${week + 1}.json`;
 
-        let nextWeekMenu = await getDataFromBlobStorage(
-            nextWeekBlobName + ".json",
-        );
+        let nextWeekMenu = await getDataFromBlobStorage(nextWeekBlobName);
         if (!nextWeekMenu) {
             nextWeekMenu = await getNextWeekMenu();
             nextWeekMenu = await processMenuWithPics(
                 nextWeekMenu,
-                nextWeekBlobName + ".json",
+                nextWeekBlobName,
             );
-            console.log(nextWeekMenu);
 
             await uploadToBlobStorage(
                 JSON.stringify(nextWeekMenu),
-                nextWeekBlobName + ".json",
+                nextWeekBlobName,
             );
         }
 
