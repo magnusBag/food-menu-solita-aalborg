@@ -15,6 +15,7 @@ export async function foodAndCoMenuParser(
         const [year, week] = getWeekNumber();
         const thisWeekMenu = await processWeekMenu(year, week, false);
         const nextWeekMenu = await processWeekMenu(year, week, true);
+        console.log(nextWeekMenu);
 
         const htmlTemplate = await Deno.readTextFile(
             "./food_and_co_template.html",
@@ -52,7 +53,8 @@ async function processWeekMenu(
     const blobName = `menu-${year}-${isNextWeek ? week + 1 : week}.json`;
 
     const menuData = await getDataFromBlobStorage(blobName);
-    if (menuData) return menuData;
+
+    if (menuData && menuData.length > 0) return menuData;
 
     const newFoodData = await getWeekMenu(isNextWeek ? "next" : "now");
     const newFoodDataTranslated = await translateMenu(newFoodData);
