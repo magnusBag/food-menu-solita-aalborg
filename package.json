@@ -1,0 +1,23 @@
+{
+  "name": "bun-api-server",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "bun run index.tsx",
+    "dev": "bun --hot run index.tsx"
+  },
+  "dependencies": {
+    "@elysiajs/static": "^0.8.0",
+    "@types/pg": "^8.11.11",
+    "elysia": "^0.8.5",
+    "pg": "^8.14.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3"
+  }
+}

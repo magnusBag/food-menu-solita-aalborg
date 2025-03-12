@@ -1,10 +1,10 @@
-import { Application, Router } from "jsr:@oak/oak/";
+import { Application, Context, Router } from "jsr:@oak/oak";
 import { foodAndCoMenuParser } from "./foodAndCoMenuParser.ts";
 
 const app = new Application();
 const router = new Router();
 router
-  .get("/", async (context) => {
+  .get("/", async (context: Context) => {
     const response = await foodAndCoMenuParser("html");
     context.response.headers.set("Content-Type", "text/html");
     context.response.body = response.body;
