@@ -7,6 +7,7 @@
     "dev": "bun --hot run index.tsx"
   },
   "dependencies": {
+    "@azure/storage-blob": "^12.26.0",
     "@elysiajs/static": "^0.8.0",
     "@types/pg": "^8.11.11",
     "elysia": "^0.8.5",

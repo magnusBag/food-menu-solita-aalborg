@@ -7,102 +7,131 @@ interface MenuProps {
   menuItems: MenuItem[];
 }
 
-const styles = {
-  container: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '2rem',
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-  },
-  title: {
-    fontSize: '3rem',
-    fontWeight: 700,
-    color: '#2d3748',
-    textAlign: 'center' as const,
-    marginBottom: '1rem',
-    letterSpacing: '-0.5px'
-  },
-  subtitle: {
-    fontSize: '1.5rem',
-    color: '#4a5568',
-    textAlign: 'center' as const,
-    marginBottom: '0.5rem'
-  },
-  message: {
-    fontSize: '1.1rem',
-    color: '#718096',
-    textAlign: 'center' as const,
-    marginBottom: '3rem'
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr',
-    gap: '2rem',
-    padding: '1rem'
-  },
-  card: {
-    background: 'white',
-    borderRadius: '12px',
-    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-    padding: '1.5rem',
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-    position: 'relative' as const,
-    overflow: 'hidden',
-    ':hover': {
-      transform: 'translateY(-5px)',
-      boxShadow: '0 8px 12px rgba(0, 0, 0, 0.15)'
-    }
-  },
-  cardTitle: {
-    fontSize: '1.5rem',
-    fontWeight: 600,
-    color: '#1a202c',
-    marginBottom: '1rem',
-    position: 'relative' as const,
-    paddingBottom: '0.5rem',
-    borderBottom: '3px solid #4299e1',
-    width: 'fit-content'
-  },
-  cardDescription: {
-    fontSize: '1rem',
-    lineHeight: 1.6,
-    color: '#4a5568',
-    marginBottom: '1.5rem'
-  },
-  cardFooter: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 'auto',
-    paddingTop: '1rem',
-    borderTop: '1px solid #e2e8f0'
-  },
-  itemType: {
-    fontSize: '1rem',
-    fontWeight: 600,
-    color: '#48bb78',
-    padding: '0.25rem 0.75rem',
-    background: '#f0fff4',
-    borderRadius: '20px'
-  }
-};
-
 export const Menu = ({ title, message, menuItems }: MenuProps) => {
+  
+
+  // Function to check if a date is in the past
+  const isPastDate = (dateString: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to beginning of day for accurate comparison
+    const itemDate = new Date(dateString);
+    itemDate.setHours(0, 0, 0, 0);
+    return itemDate < today;
+  };
+
+  // Function to check if a date is today
+  const isToday = (dateString: string) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const itemDate = new Date(dateString);
+    itemDate.setHours(0, 0, 0, 0);
+    return itemDate.getTime() === today.getTime();
+  };
+
+  // Function to get day of week in Danish
+  const getDanishDayOfWeek = (dateString: string) => {
+    const date = new Date(dateString);
+    const danishDays = [
+      'Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 
+      'Torsdag', 'Fredag', 'Lørdag'
+    ];
+    return danishDays[date.getDay()];
+  };
+
+  // Pre-process and sort menu items by date (do this work once)
+  const processedMenuItems = React.useMemo(() => {
+    // Sort menu items by date
+    const sortedItems = [...menuItems].sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+    
+    // Group menu items by date
+    const itemsByDate: Record<string, {
+      items: MenuItem[],
+      isPast: boolean,
+      isCurrentDay: boolean,
+      danishDay: string,
+      formattedDate: string
+    }> = {};
+    
+    sortedItems.forEach(item => {
+      const dateKey = item.date;
+      
+      if (!itemsByDate[dateKey]) {
+        itemsByDate[dateKey] = {
+          items: [],
+          isPast: isPastDate(dateKey),
+          isCurrentDay: isToday(dateKey),
+          danishDay: getDanishDayOfWeek(dateKey),
+          formattedDate: new Date(dateKey).toLocaleDateString('en-GB', { 
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          })
+        };
+      }
+      
+      itemsByDate[dateKey].items.push(item);
+    });
+    
+    return itemsByDate;
+  }, [menuItems]);
+
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>Menu</h1>
-      <p style={styles.subtitle}>{title}</p>
-      <p style={styles.message}>{message}</p>
-      <div style={styles.grid}>
-        {menuItems.map((item) => (
-          <div key={item.name} style={styles.card}>
-            <h3 style={styles.cardTitle}>{item.name}</h3>
-            <p style={styles.cardDescription}>{item.description}</p>
-            <div style={styles.cardFooter}>
-              <span style={styles.itemType}>{item.type}</span>
+    <div className="container">
+      <header className="menuHeader">
+        <h1 className="title">Menu</h1>
+        <p className="message">{message}</p>
+      </header>
+      
+      <div className="menuContent">
+        {Object.entries(processedMenuItems).map(([date, dateData]) => {
+          // Skip rendering past dates completely to improve performance
+          if (dateData.isPast) return null;
+          
+          return (
+            <div key={date} className={`dateGroup ${dateData.isCurrentDay ? 'currentDay' : ''}`}>
+              <div className="dayHeader">
+                <h2 className="dayName">
+                  {dateData.danishDay}
+                  <span className="dateLabel">{dateData.formattedDate}</span>
+                  {dateData.isCurrentDay && <span className="todayLabel">I dag</span>}
+                </h2>
+              </div>
+              
+              <div className="grid">
+                {dateData.items.map((item) => {
+                  const isUniqueDate = dateData.items.length === 1;
+                  
+                  return (
+                    <div 
+                      key={item.name}
+                      className={`card ${isUniqueDate ? 'fullWidth' : ''}`}
+                    >
+                      <div className="cardImageContainer">
+                        <img
+                          src={item.imageurl}
+                          alt={item.name || item.description}
+                          className="cardImage"
+                          loading="lazy"
+                          width="768"
+                          height="574"
+                          decoding="async"
+                          />
+                        <span className={`itemType ${item.type}`}>{item.type}</span>
+                      </div>
+                      
+                      <div className="cardContent">
+                        <h3 className="cardTitle">{item.name.length > 0 ? item.name : item.description}</h3>
+                        <p className="cardDescription">{item.description}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
