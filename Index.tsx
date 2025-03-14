@@ -126,21 +126,9 @@ const app = new Elysia()
     `;
     
     return html;
-  })
-  .get('/api/hello', () => {
+  }).get('/alive', () => {
     return {
-      message: 'Hello from the Bun API server!'
-    };
-  })
-  .get('/api/time', () => {
-    return {
-      time: new Date().toISOString(),
-      timestamp: Date.now()
-    };
-  })
-  .post('/api/echo', ({ body }) => {
-    return {
-      echoed: body
+      alive: true
     };
   })
   .listen(3000);
