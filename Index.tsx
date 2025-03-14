@@ -20,7 +20,7 @@ const app = new Elysia()
   .get('/', async ({ set }) => {
     set.headers['Content-Type'] = 'text/html; charset=utf-8';
     const menu = await menuService.getAllMenuItems();
-    const menuHtml = renderToString(<Menu title="Welcome to the Menu" message="This is a message from the Menu" menuItems={menu} />);
+    const menuHtml = renderToString(<Menu title="Welcome to the Menu" menuItems={menu} />);
     
     // Create a complete HTML document with the CSS included
     const html = `

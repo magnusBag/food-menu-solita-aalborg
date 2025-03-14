@@ -3,7 +3,6 @@ import { MenuItem } from '../models/menu';
 
 interface MenuProps {
   title: string;
-  message: string;
   menuItems: MenuItem[];
 }
 
@@ -81,7 +80,6 @@ export const Menu = ({ title, message, menuItems }: MenuProps) => {
     <div className="container">
       <header className="menuHeader">
         <h1 className="title">Menu</h1>
-        <p className="message">{message}</p>
       </header>
       
       <div className="menuContent">
