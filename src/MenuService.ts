@@ -109,7 +109,10 @@ export class MenuService {
             // Check if the provided string is a SAS URL
 
             // Create a unique blob name
-            const blobName = `${item.name.replace(/[^a-zA-Z0-9]/g, "-")}.png`;
+            const blobName = `food-images-new/${item.name.replace(
+              /[^a-zA-Z0-9]/g,
+              "-"
+            )}.png`;
 
             // Download the image from OpenAI
             console.log("Downloading image from OpenAI...");
