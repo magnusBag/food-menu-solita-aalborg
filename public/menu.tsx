@@ -7,7 +7,7 @@ interface MenuProps {
 }
 
 export const Menu = ({ title, message, menuItems }: MenuProps) => {
-  
+
 
   // Function to check if a date is in the past
   const isPastDate = (dateString: string) => {
@@ -31,7 +31,7 @@ export const Menu = ({ title, message, menuItems }: MenuProps) => {
   const getDanishDayOfWeek = (dateString: string) => {
     const date = new Date(dateString);
     const danishDays = [
-      'Søndag', 'Mandag', 'Tirsdag', 'Onsdag', 
+      'Søndag', 'Mandag', 'Tirsdag', 'Onsdag',
       'Torsdag', 'Fredag', 'Lørdag'
     ];
     return danishDays[date.getDay()];
@@ -40,10 +40,10 @@ export const Menu = ({ title, message, menuItems }: MenuProps) => {
   // Pre-process and sort menu items by date (do this work once)
   const processedMenuItems = React.useMemo(() => {
     // Sort menu items by date
-    const sortedItems = [...menuItems].sort((a, b) => 
+    const sortedItems = [...menuItems].sort((a, b) =>
       new Date(a.date).getTime() - new Date(b.date).getTime()
     );
-    
+
     // Group menu items by date
     const itemsByDate: Record<string, {
       items: MenuItem[],
@@ -52,27 +52,27 @@ export const Menu = ({ title, message, menuItems }: MenuProps) => {
       danishDay: string,
       formattedDate: string
     }> = {};
-    
+
     sortedItems.forEach(item => {
       const dateKey = item.date;
-      
+
       if (!itemsByDate[dateKey]) {
         itemsByDate[dateKey] = {
           items: [],
           isPast: isPastDate(dateKey),
           isCurrentDay: isToday(dateKey),
           danishDay: getDanishDayOfWeek(dateKey),
-          formattedDate: new Date(dateKey).toLocaleDateString('en-GB', { 
+          formattedDate: new Date(dateKey).toLocaleDateString('en-GB', {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric'
           })
         };
       }
-      
+
       itemsByDate[dateKey].items.push(item);
     });
-    
+
     return itemsByDate;
   }, [menuItems]);
 
@@ -81,12 +81,12 @@ export const Menu = ({ title, message, menuItems }: MenuProps) => {
       <header className="menuHeader">
         <h1 className="title">Menu</h1>
       </header>
-      
+
       <div className="menuContent">
         {Object.entries(processedMenuItems).map(([date, dateData]) => {
           // Skip rendering past dates completely to improve performance
           if (dateData.isPast) return null;
-          
+
           return (
             <div key={date} className={`dateGroup ${dateData.isCurrentDay ? 'currentDay' : ''}`}>
               <div className="dayHeader">
@@ -96,13 +96,13 @@ export const Menu = ({ title, message, menuItems }: MenuProps) => {
                   {dateData.isCurrentDay && <span className="todayLabel">I dag</span>}
                 </h2>
               </div>
-              
+
               <div className="grid">
-                {dateData.items.map((item) => {
+                {dateData.items.sort((a) => a.type === 'meat' ? -1 : 1).map((item) => {
                   const isUniqueDate = dateData.items.length === 1;
-                  
+
                   return (
-                    <div 
+                    <div
                       key={item.name}
                       className={`card ${isUniqueDate ? 'fullWidth' : ''}`}
                     >
@@ -118,10 +118,10 @@ export const Menu = ({ title, message, menuItems }: MenuProps) => {
                           />
                         <span className={`itemType ${item.type}`}>{item.type}</span>
                       </div>
-                      
+
                       <div className="cardContent">
-                        <h3 className="cardTitle">{item.name.length > 0 ? item.name : item.description}</h3>
-                        <p className="cardDescription">{item.description}</p>
+                        <h3 className="cardTitle">{item.name}</h3>
+                        <p className="cardDescription">{item.description == item.name ? "" : item.description}</p>
                       </div>
                     </div>
                   );
