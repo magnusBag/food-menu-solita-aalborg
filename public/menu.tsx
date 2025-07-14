@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { MenuItem } from '../models/menu';
 import './menu.css';
 
@@ -9,8 +9,6 @@ interface MenuProps {
 }
 
 export const Menu = ({ title, menuItems }: MenuProps) => {
-
-
   // Function to check if a date is in the past
   const isPastDate = (dateString: string) => {
     const today = new Date();
@@ -40,7 +38,7 @@ export const Menu = ({ title, menuItems }: MenuProps) => {
   };
 
   // Pre-process and sort menu items by date (do this work once)
-  const processedMenuItems = React.useMemo(() => {
+  const processedMenuItems = useMemo(() => {
     // Sort menu items by date
     const sortedItems = [...menuItems].sort((a, b) =>
       new Date(a.date).getTime() - new Date(b.date).getTime()
