@@ -1,12 +1,14 @@
 import React from 'react';
 import { MenuItem } from '../models/menu';
+import './menu.css';
 
 interface MenuProps {
   title: string;
   menuItems: MenuItem[];
+
 }
 
-export const Menu = ({ title, message, menuItems }: MenuProps) => {
+export const Menu = ({ title, menuItems }: MenuProps) => {
 
 
   // Function to check if a date is in the past
@@ -50,7 +52,7 @@ export const Menu = ({ title, message, menuItems }: MenuProps) => {
       isPast: boolean,
       isCurrentDay: boolean,
       danishDay: string,
-      formattedDate: string
+      formattedDate: string,
     }> = {};
 
     sortedItems.forEach(item => {
@@ -66,11 +68,12 @@ export const Menu = ({ title, message, menuItems }: MenuProps) => {
             day: '2-digit',
             month: '2-digit',
             year: 'numeric'
-          })
+          }),
         };
       }
 
       itemsByDate[dateKey].items.push(item);
+
     });
 
     return itemsByDate;
@@ -104,7 +107,7 @@ export const Menu = ({ title, message, menuItems }: MenuProps) => {
                   return (
                     <div
                       key={item.name}
-                      className={`card ${isUniqueDate ? 'fullWidth' : ''}`}
+                      className={`card ${isUniqueDate ? 'fullWidth' : ''} ${item.type === 'meat' ? 'meatDay' : 'veggieDay'}`}
                     >
                       <div className="cardImageContainer">
                         <img
