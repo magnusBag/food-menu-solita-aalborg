@@ -358,6 +358,37 @@ h6 {
   .menu-title {
     font-size: 2rem;
   }
+  .container.compactView {
+    padding: 0.5rem;
+  }
+  .grid.compact {
+    padding: 0 !important;
+  }
+  .container.compactView > .menuContent {
+    padding: 0 !important;
+  }
+  .dateGroup.compact {
+    padding: 0 !important;
+    margin-left: -0.2rem !important;
+  }
+  .dateGroup {
+    padding: 0.5rem !important;
+  }
+  .dateGroup {
+    padding: 0.5rem !important;
+  }
+  .dayName {
+    margin: 0;
+  }
+  .dateLabel {
+    margin-left: 0.5rem;
+  }
+  .todayLabel {
+    margin-left: 0.5rem;
+  }
+  .container {
+    padding: 1rem 1rem 1rem 0.5rem;
+  }
 }
 
 /* Neo-Brutalist Animation */
