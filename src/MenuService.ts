@@ -1,7 +1,6 @@
 import { Pool } from "pg";
 import { MenuItem } from "../models/menu";
 import { getMenu } from "./getMenu";
-import { BlobServiceClient } from "@azure/storage-blob";
 
 export class MenuService {
   private pool: Pool;
@@ -110,10 +109,10 @@ export class MenuService {
             // Check if the provided string is a SAS URL
 
             // Create a unique blob name
-            const blobName = `${item.name.replace(
+            const blobName = `food-images-new/${item.name.replace(
               /[^a-zA-Z0-9]/g,
               "-"
-            )}-${Date.now()}.png`;
+            )}.png`;
 
             // Download the image from OpenAI
             console.log("Downloading image from OpenAI...");
@@ -126,11 +125,11 @@ export class MenuService {
             const imageBuffer = await imageResponse.arrayBuffer();
 
             // Extract container name from SAS URL
-            const url = new URL(sasUrl);
-            const containerName = url.pathname.split("/")[1]; // Extract container name from path
+            const sasUrlObj = new URL(decodeURIComponent(sasUrl));
+            const containerName = sasUrlObj.pathname.split("/")[1]; // Extract container name from path
 
             // Create the full blob URL with SAS token for the new blob
-            const blobSasUrl = `${url.origin}/${containerName}/${blobName}${url.search}`;
+            const blobSasUrl = `${sasUrlObj.origin}/${containerName}/${blobName}${sasUrlObj.search}`;
 
             console.log(
               `Uploading image for '${item.name}' to blob storage...`
@@ -153,7 +152,7 @@ export class MenuService {
             }
 
             // Get the URL of the uploaded blob (without the SAS token for public access)
-            const publicBlobUrl = `${url.origin}/${containerName}/${blobName}`;
+            const publicBlobUrl = `${sasUrlObj.origin}/${containerName}/${blobName}`;
             imageUrl = publicBlobUrl;
             console.log(`Image uploaded successfully to: ${publicBlobUrl}`);
           } catch (uploadError) {
