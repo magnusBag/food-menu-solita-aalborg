@@ -111,7 +111,7 @@ export class MenuService {
             // Check if the provided string is a SAS URL
 
             // Create a unique blob name
-            const blobName = `${blobContainerName}${item.name.replace(
+            const blobName = `${blobContainerName}/${item.name.replace(
               /[^a-zA-Z0-9]/g,
               "-"
             )}.png`;
