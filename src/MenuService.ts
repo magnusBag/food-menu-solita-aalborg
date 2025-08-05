@@ -104,12 +104,14 @@ export class MenuService {
 
         // Try to upload to Azure Blob Storage if SAS URL is available
         const sasUrl = process.env.AZURE_STORAGE_CONNECTION_STRING;
+        const blobContainerName =
+          process.env.AZURE_STORAGE_CONTAINER_NAME || "weekly-food-menu";
         if (sasUrl) {
           try {
             // Check if the provided string is a SAS URL
 
             // Create a unique blob name
-            const blobName = `food-skibsbyggerivej/${item.name.replace(
+            const blobName = `${blobContainerName}${item.name.replace(
               /[^a-zA-Z0-9]/g,
               "-"
             )}.png`;
