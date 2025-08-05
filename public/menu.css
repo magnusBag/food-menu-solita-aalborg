@@ -91,8 +91,6 @@ body {
   border-radius: var(--border-radius);
   padding: 1rem;
   min-width: 200px;
-  opacity: 0;
-  visibility: hidden;
   transition: all 0.3s ease;
 }
 

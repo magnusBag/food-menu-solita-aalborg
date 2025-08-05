@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Menu</title>
+    <link rel="stylesheet" href="/menu.css" />
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+  </head>
+  <body>
+    <div
+      x-data="menuApp()"
+      :data-theme="theme"
+      class="container"
+      :class="compactView ? 'compactView' : ''"
+    >
+      <div class="settings-dropdown">
+        <button
+          class="settings-toggle"
+          aria-label="Open settings"
+          x-on:click="open = !open"
+        >
+          ⚙️
+        </button>
+        <div class="settings-menu" x-show="open" x-transition x-cloak>
+          <div class="settings-item">
+            <label for="theme-toggle">Theme:</label>
+            <button
+              class="theme-toggle"
+              aria-label="Toggle dark mode"
+              x-on:click="toggleTheme()"
+              x-text="theme === 'dark' ? '☀️' : '🌙'"
+            ></button>
+          </div>
+          <div class="settings-item">
+            <label for="compact-toggle">View:</label>
+            <button
+              class="compact-toggle"
+              aria-label="Toggle compact view"
+              x-on:click="toggleCompactView()"
+              x-text="compactView ? 'Compact View' : 'Normal View'"
+            ></button>
+          </div>
+          <div class="settings-item">
+            <label for="border-radius-slider">Border Radius:</label>
+            <div class="slider-container">
+              <input
+                type="range"
+                min="0"
+                max="30"
+                x-model="borderRadius"
+                class="radius-slider"
+                aria-label="Adjust border radius"
+                x-on:input="setBorderRadius(borderRadius)"
+              />
+              <span class="slider-value" x-text="borderRadius + 'px'"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <template x-if="menuData.length">
+        <template x-for="week in menuData" :key="week.weekNumber">
+          <div class="dateGroup" :class="compactView ? 'compact' : ''">
+            <h2>Uge <span x-text="week.weekNumber"></span></h2>
+            <div class="grid" :class="compactView ? 'compact' : ''">
+              <template x-for="item in week.items" :key="item.id">
+                <div class="card" :class="compactView ? 'compact' : ''">
+                  <img
+                    :src="item.imageurl"
+                    alt=""
+                    style="
+                      width: 100%;
+                      border-radius: var(--border-radius);
+                      margin-bottom: 8px;
+                    "
+                  />
+                  <div><strong x-text="item.name"></strong></div>
+                  <div x-text="item.date"></div>
+                  <div x-text="item.description"></div>
+                  <div x-text="item.type"></div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </template>
+    </div>
+    <script>
+      window.menuApp = function () {
+        return {
+          open: false,
+          theme: "light",
+          compactView: false,
+          borderRadius: 15,
+          menuData: [],
+          init() {
+            // Fetch menu data from the server
+            fetch("/menu")
+              .then((response) => response.json())
+              .then((data) => {
+                this.menuData = data;
+              });
+            const savedTheme = localStorage.getItem("theme");
+            if (savedTheme) {
+              this.theme = savedTheme;
+            } else {
+              this.theme = window.matchMedia("(prefers-color-scheme: dark)")
+                .matches
+                ? "dark"
+                : "light";
+            }
+            document.documentElement.setAttribute("data-theme", this.theme);
+            window
+              .matchMedia("(prefers-color-scheme: dark)")
+              .addEventListener("change", (e) => {
+                if (!localStorage.getItem("theme")) {
+                  this.theme = e.matches ? "dark" : "light";
+                  document.documentElement.setAttribute(
+                    "data-theme",
+                    this.theme
+                  );
+                }
+              });
+            this.compactView = localStorage.getItem("compactView") === "true";
+            this.borderRadius = parseInt(
+              localStorage.getItem("borderRadius") || "15"
+            );
+            this.setBorderRadius(this.borderRadius);
+          },
+          toggleTheme() {
+            this.theme = this.theme === "light" ? "dark" : "light";
+            document.documentElement.setAttribute("data-theme", this.theme);
+            localStorage.setItem("theme", this.theme);
+          },
+          toggleCompactView() {
+            this.compactView = !this.compactView;
+            localStorage.setItem("compactView", this.compactView);
+          },
+          setBorderRadius(value) {
+            document.documentElement.style.setProperty(
+              "--border-radius",
+              value + "px"
+            );
+            localStorage.setItem("borderRadius", value);
+          },
+        };
+      };
+    </script>
+  </body>
+</html>
