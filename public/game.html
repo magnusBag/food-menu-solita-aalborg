@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Menu Matching Game</title>
+    <style>
+      /* Neo-Brutalist Base styles inspired by NeoBrutalismCSS */
+      :root {
+        /* Light theme variables */
+        --bg-primary: #833ab4;
+        --bg-gradient: linear-gradient(
+          67deg,
+          rgba(131, 58, 180, 1) 0%,
+          rgba(253, 62, 38, 1) 59%,
+          rgba(252, 176, 69, 1) 100%
+        );
+        --text-primary: #000000;
+        --text-secondary: #333333;
+        --card-bg: #ffffff;
+        --border-color: #000000;
+        --shadow-color: #000000;
+        --accent-orange: #ff6b35;
+        --accent-teal: #4ecdc4;
+        --menu-header-bg: #ff6b35;
+        --menu-header-text: #ffffff;
+        --border-radius: 0px;
+      }
+
+      [data-theme="dark"] {
+        /* Dark theme variables */
+        --bg-primary: #0f0f0f;
+        --bg-gradient: linear-gradient(
+          67deg,
+          #0f0f0f 0%,
+          #1a1a2e 25%,
+          #16213e 50%,
+          #0f3460 75%,
+          #0f0f0f 100%
+        );
+        --text-primary: #ffffff;
+        --text-secondary: #b0b0b0;
+        --card-bg: #1a1a1a;
+        --border-color: white;
+        --shadow-color: #000000;
+        --accent-orange: #ff6b35;
+        --accent-teal: #4ecdc4;
+        --menu-header-bg: #ff6b35;
+        --menu-header-text: #ffffff;
+      }
+
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+          sans-serif;
+        margin: 0;
+        padding: 0;
+        background: var(--bg-primary);
+        background: var(--bg-gradient);
+        color: var(--text-primary);
+        line-height: 1.4;
+        min-height: 100vh;
+        transition: all 0.3s ease;
+      }
+
+      .game-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        background: transparent;
+      }
+
+      h1 {
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-weight: 900;
+        font-size: 3rem;
+        text-align: center;
+        text-shadow: 4px 4px 0px var(--accent-teal);
+      }
+
+      .game-mode-toggle {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .score {
+        font-size: 1.5rem;
+        margin-bottom: 2rem;
+        color: var(--text-primary);
+        text-align: center;
+        background: var(--accent-orange);
+        padding: 1rem 2rem;
+        border: 3px solid var(--border-color);
+        box-shadow: 5px 5px 0px var(--shadow-color);
+        text-transform: uppercase;
+        font-weight: bold;
+        display: inline-block;
+        margin: 0 auto 2rem auto;
+      }
+
+      .image-container {
+        margin: 2rem 0;
+        text-align: center;
+      }
+
+      .food-image {
+        max-width: 400px;
+        max-height: 300px;
+        border: 4px solid var(--border-color);
+        box-shadow: 8px 8px 0px var(--accent-orange);
+        transition: all 0.3s ease;
+      }
+
+      .food-image:hover {
+        transform: rotate(0deg) translateY(-8px);
+        box-shadow: 12px 12px 0px var(--accent-teal);
+      }
+
+      .images-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
+      }
+
+      .image-option {
+        cursor: pointer;
+        border: 4px solid var(--border-color);
+        background: var(--card-bg);
+        box-shadow: 8px 8px 0px var(--accent-orange);
+        transform: rotate(-1deg);
+        transition: all 0.3s ease;
+        overflow: hidden;
+      }
+
+      .image-option:hover {
+        transform: rotate(0deg) translateY(-8px);
+        box-shadow: 12px 12px 0px var(--accent-teal);
+      }
+
+      .image-option img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        display: block;
+      }
+
+      .image-option.correct {
+        border-color: var(--accent-teal);
+        background: var(--accent-teal);
+        box-shadow: 8px 8px 0px var(--shadow-color);
+        transform: rotate(0deg);
+      }
+
+      .image-option.incorrect {
+        border-color: var(--accent-orange);
+        background: var(--accent-orange);
+        box-shadow: 8px 8px 0px var(--shadow-color);
+        transform: rotate(0deg);
+      }
+
+      .image-option.disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+
+      .food-name {
+        font-size: 2rem;
+        font-weight: 900;
+        color: var(--text-primary);
+        text-align: center;
+        background: var(--accent-teal);
+        padding: 1rem 2rem;
+        border: 4px solid var(--border-color);
+        box-shadow: 6px 6px 0px var(--shadow-color);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        transform: rotate(-1deg);
+        margin: 2rem auto;
+        display: inline-block;
+      }
+
+      .options-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin: 2rem 0;
+      }
+
+      .option-button {
+        padding: 1.5rem 2rem;
+        border: 4px solid var(--border-color);
+        background: var(--card-bg);
+        cursor: pointer;
+        font-size: 1.2rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+        box-shadow: 8px 8px 0px var(--accent-orange);
+        color: var(--text-primary);
+      }
+
+      .option-button:hover {
+        transform: rotate(0deg) translateY(-8px);
+        box-shadow: 12px 12px 0px var(--accent-teal);
+        background: var(--accent-teal);
+      }
+
+      .option-button.correct {
+        border-color: var(--accent-teal);
+        background: var(--accent-teal);
+        color: var(--text-primary);
+        box-shadow: 8px 8px 0px var(--shadow-color);
+        transform: rotate(0deg);
+      }
+
+      .option-button.incorrect {
+        border-color: var(--accent-orange);
+        background: var(--accent-orange);
+        color: var(--text-primary);
+        box-shadow: 8px 8px 0px var(--shadow-color);
+        transform: rotate(0deg);
+      }
+
+      .option-button.disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+
+      .message {
+        margin: 2rem 0;
+        padding: 1.5rem;
+        border: 4px solid var(--border-color);
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 1.2rem;
+        text-align: center;
+        box-shadow: 6px 6px 0px var(--shadow-color);
+        transform: rotate(-1deg);
+      }
+
+      .message.correct {
+        background: var(--accent-teal);
+        color: var(--text-primary);
+        border-color: var(--accent-teal);
+      }
+
+      .message.incorrect {
+        background: var(--accent-orange);
+        color: var(--text-primary);
+        border-color: var(--accent-orange);
+      }
+
+      .next-button {
+        background: var(--accent-teal);
+        color: var(--text-primary);
+        border: 4px solid var(--border-color);
+        padding: 1rem 2rem;
+        border-radius: var(--border-radius);
+        font-size: 1.2rem;
+        cursor: pointer;
+        margin-top: 2rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 6px 6px 0px var(--accent-orange);
+        transform: rotate(-1deg);
+        transition: all 0.3s ease;
+      }
+
+      .next-button:hover {
+        transform: rotate(0deg) translateY(-4px);
+        box-shadow: 8px 8px 0px var(--accent-orange);
+        background: var(--accent-orange);
+      }
+
+      .game-over {
+        font-size: 3rem;
+        font-weight: 900;
+        color: var(--text-primary);
+        margin: 2rem 0;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        text-shadow: 4px 4px 0px var(--shadow-color);
+        text-align: center;
+      }
+
+      .final-score {
+        font-size: 2rem;
+        color: var(--text-primary);
+        text-align: center;
+        background: var(--accent-orange);
+        padding: 1rem 2rem;
+        border: 4px solid var(--border-color);
+        box-shadow: 6px 6px 0px var(--shadow-color);
+        text-transform: uppercase;
+        font-weight: bold;
+        transform: rotate(-1deg);
+        display: inline-block;
+        margin: 1rem auto;
+      }
+
+      .restart-button {
+        background: var(--accent-teal);
+        color: var(--text-primary);
+        border: 4px solid var(--border-color);
+        padding: 1rem 2rem;
+        border-radius: var(--border-radius);
+        font-size: 1.2rem;
+        cursor: pointer;
+        margin-top: 2rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow: 6px 6px 0px var(--accent-orange);
+        transform: rotate(-1deg);
+        transition: all 0.3s ease;
+      }
+
+      .restart-button:hover {
+        transform: rotate(0deg) translateY(-4px);
+        box-shadow: 8px 8px 0px var(--accent-orange);
+        background: var(--accent-orange);
+      }
+
+      /* Neo-Brutalist Animation */
+      @keyframes brutalFadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(40px) rotate(-5deg);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) rotate(0deg);
+        }
+      }
+
+      .game-container {
+        animation: brutalFadeIn 0.6s ease forwards;
+      }
+
+      /* Responsive adjustments */
+      @media (max-width: 768px) {
+        .game-container {
+          padding: 1rem;
+        }
+
+        h1 {
+          font-size: 2rem;
+        }
+
+        .options-container,
+        .images-container {
+          grid-template-columns: 1fr;
+        }
+
+        .food-image {
+          max-width: 100%;
+        }
+
+        .option-button {
+          font-size: 1rem;
+          padding: 1rem 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="game-container">
+      <h1>Menu Matching Game</h1>
+
+      <div class="score">Score: <span id="score">0</span></div>
+
+      <div id="game-area">
+        <!-- Image to Name Mode -->
+        <div id="image-to-name-mode">
+          <div class="image-container">
+            <img id="food-image" class="food-image" src="" alt="Food item" />
+          </div>
+
+          <div class="options-container" id="options-container">
+            <!-- Options will be populated here -->
+          </div>
+        </div>
+
+        <!-- Name to Image Mode -->
+        <div id="name-to-image-mode" style="display: none">
+          <div class="food-name" id="food-name">
+            <!-- Food name will be populated here -->
+          </div>
+
+          <div class="images-container" id="images-container">
+            <!-- Image options will be populated here -->
+          </div>
+        </div>
+
+        <div id="message" class="message" style="display: none"></div>
+
+        <button id="next-button" class="next-button" style="display: none">
+          Next Round
+        </button>
+      </div>
+
+      <div id="game-over" style="display: none">
+        <div class="game-over">Game Over!</div>
+        <div class="final-score">
+          Final Score: <span id="final-score">0</span>
+        </div>
+        <button class="restart-button" onclick="startGame()">Play Again</button>
+      </div>
+    </div>
+
+    <script type="module">
+      let menuItems = [];
+      let currentRound = {
+        correctItem: null,
+        options: [],
+        correctIndex: 0,
+      };
+      let score = 0;
+      let gameActive = false;
+      let currentMode = "image-to-name";
+      let usedItems = new Set(); // Track used items to avoid repetition
+
+      // Pure function to shuffle array
+      const shuffleArray = (array) => {
+        const shuffled = [...array];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled;
+      };
+
+      // Pure function to get random items
+      const getRandomItems = (items, count) => {
+        const shuffled = shuffleArray(items);
+        return shuffled.slice(0, count);
+      };
+
+      // Pure function to get random item with image
+      const getRandomItemWithImage = (items) => {
+        const itemsWithImages = items.filter((item) => item.imageurl);
+        if (itemsWithImages.length === 0) return null;
+
+        // Filter out already used items
+        const availableItems = itemsWithImages.filter(
+          (item) => !usedItems.has(item.name)
+        );
+
+        // If no available items, reset used items and start over
+        if (availableItems.length === 0) {
+          usedItems.clear();
+          return itemsWithImages[
+            Math.floor(Math.random() * itemsWithImages.length)
+          ];
+        }
+
+        const randomIndex = Math.floor(Math.random() * availableItems.length);
+        return availableItems[randomIndex];
+      };
+
+      // Pure function to generate options
+      const generateOptions = (correctItem, allItems) => {
+        const otherItems = allItems.filter(
+          (item) => item.name !== correctItem.name
+        );
+        const randomOptions = getRandomItems(otherItems, 2);
+        const allOptions = [correctItem, ...randomOptions];
+        return shuffleArray(allOptions);
+      };
+
+      // Pure function to generate image options
+      const generateImageOptions = (correctItem, allItems) => {
+        const otherItemsWithImages = allItems.filter(
+          (item) => item.imageurl && item.name !== correctItem.name
+        );
+        const randomOptions = getRandomItems(otherItemsWithImages, 2);
+        const allOptions = [correctItem, ...randomOptions];
+        return shuffleArray(allOptions);
+      };
+
+      // Pure function to randomly select game mode
+      const getRandomMode = () => {
+        const modes = ["image-to-name", "name-to-image"];
+        const randomIndex = Math.floor(Math.random() * modes.length);
+        return modes[randomIndex];
+      };
+
+      // Save game state to localStorage
+      const saveGameState = () => {
+        const gameState = {
+          score,
+          gameActive,
+          currentMode,
+          usedItems: Array.from(usedItems),
+          timestamp: Date.now(),
+        };
+        localStorage.setItem("menuGameState", JSON.stringify(gameState));
+      };
+
+      // Load game state from localStorage
+      const loadGameState = () => {
+        try {
+          const savedState = localStorage.getItem("menuGameState");
+          if (savedState) {
+            const gameState = JSON.parse(savedState);
+
+            // Check if saved state is from today (within 24 hours)
+            const isToday =
+              Date.now() - gameState.timestamp < 24 * 60 * 60 * 1000;
+
+            if (isToday) {
+              score = gameState.score || 0;
+              gameActive = gameState.gameActive || false;
+              currentMode = gameState.currentMode || "image-to-name";
+              usedItems = new Set(gameState.usedItems || []);
+              return true;
+            } else {
+              // Clear old state if it's from a previous day
+              localStorage.removeItem("menuGameState");
+            }
+          }
+        } catch (error) {
+          console.error("Error loading game state:", error);
+          localStorage.removeItem("menuGameState");
+        }
+        return false;
+      };
+
+      // Clear game state from localStorage
+      const clearGameState = () => {
+        localStorage.removeItem("menuGameState");
+      };
+
+      const updateScore = () => {
+        document.getElementById("score").textContent = score;
+        saveGameState(); // Save state whenever score changes
+      };
+
+      const showMessage = (text, isCorrect) => {
+        const messageEl = document.getElementById("message");
+        messageEl.textContent = text;
+        messageEl.className = `message ${isCorrect ? "correct" : "incorrect"}`;
+        messageEl.style.display = "block";
+      };
+
+      const hideMessage = () => {
+        document.getElementById("message").style.display = "none";
+      };
+
+      const disableOptions = () => {
+        if (currentMode === "image-to-name") {
+          const buttons = document.querySelectorAll(".option-button");
+          buttons.forEach((button) => {
+            button.classList.add("disabled");
+            button.style.pointerEvents = "none";
+          });
+        } else {
+          const images = document.querySelectorAll(".image-option");
+          images.forEach((image) => {
+            image.classList.add("disabled");
+            image.style.pointerEvents = "none";
+          });
+        }
+      };
+
+      const enableOptions = () => {
+        if (currentMode === "image-to-name") {
+          const buttons = document.querySelectorAll(".option-button");
+          buttons.forEach((button) => {
+            button.classList.remove("disabled");
+            button.style.pointerEvents = "auto";
+          });
+        } else {
+          const images = document.querySelectorAll(".image-option");
+          images.forEach((image) => {
+            image.classList.remove("disabled");
+            image.style.pointerEvents = "auto";
+          });
+        }
+      };
+
+      const clearOptionStyles = () => {
+        if (currentMode === "image-to-name") {
+          const buttons = document.querySelectorAll(".option-button");
+          buttons.forEach((button) => {
+            button.classList.remove("correct", "incorrect");
+          });
+        } else {
+          const images = document.querySelectorAll(".image-option");
+          images.forEach((image) => {
+            image.classList.remove("correct", "incorrect");
+          });
+        }
+      };
+
+      const createNewRound = () => {
+        const correctItem = getRandomItemWithImage(menuItems);
+        if (!correctItem) {
+          endGame();
+          return;
+        }
+
+        // Add item to used items set
+        usedItems.add(correctItem.name);
+
+        // Randomly select game mode
+        currentMode = getRandomMode();
+
+        // Show/hide mode containers
+        document.getElementById("image-to-name-mode").style.display =
+          currentMode === "image-to-name" ? "block" : "none";
+        document.getElementById("name-to-image-mode").style.display =
+          currentMode === "name-to-image" ? "block" : "none";
+
+        // Reset UI state
+        hideMessage();
+        clearOptionStyles();
+        enableOptions();
+        document.getElementById("next-button").style.display = "none";
+
+        if (currentMode === "image-to-name") {
+          createImageToNameRound(correctItem);
+        } else {
+          createNameToImageRound(correctItem);
+        }
+
+        // Save state after creating new round
+        saveGameState();
+      };
+
+      const createImageToNameRound = (correctItem) => {
+        const options = generateOptions(correctItem, menuItems);
+        const correctIndex = options.findIndex(
+          (item) => item.name === correctItem.name
+        );
+
+        currentRound = {
+          correctItem,
+          options,
+          correctIndex,
+        };
+
+        // Display the image
+        const imageEl = document.getElementById("food-image");
+        imageEl.src = correctItem.imageurl;
+        imageEl.alt = correctItem.name;
+
+        // Create option buttons
+        const optionsContainer = document.getElementById("options-container");
+        optionsContainer.innerHTML = "";
+
+        options.forEach((item, index) => {
+          const button = document.createElement("button");
+          button.className = "option-button";
+          button.textContent = item.name;
+          button.onclick = () => handleOptionClick(index);
+          optionsContainer.appendChild(button);
+        });
+      };
+
+      const createNameToImageRound = (correctItem) => {
+        const options = generateImageOptions(correctItem, menuItems);
+        const correctIndex = options.findIndex(
+          (item) => item.name === correctItem.name
+        );
+
+        currentRound = {
+          correctItem,
+          options,
+          correctIndex,
+        };
+
+        // Display the food name
+        const nameEl = document.getElementById("food-name");
+        nameEl.textContent = correctItem.name;
+
+        // Create image options
+        const imagesContainer = document.getElementById("images-container");
+        imagesContainer.innerHTML = "";
+
+        options.forEach((item, index) => {
+          const imageDiv = document.createElement("div");
+          imageDiv.className = "image-option";
+          imageDiv.onclick = () => handleImageClick(index);
+
+          const img = document.createElement("img");
+          img.src = item.imageurl;
+          img.alt = item.name;
+
+          imageDiv.appendChild(img);
+          imagesContainer.appendChild(imageDiv);
+        });
+      };
+
+      const handleOptionClick = (clickedIndex) => {
+        if (!gameActive) return;
+
+        const isCorrect = clickedIndex === currentRound.correctIndex;
+        const buttons = document.querySelectorAll(".option-button");
+
+        if (isCorrect) {
+          score++;
+          updateScore();
+          buttons[clickedIndex].classList.add("correct");
+          showMessage("Correct! Well done!", true);
+          disableOptions();
+          document.getElementById("next-button").style.display = "inline-block";
+        } else {
+          score = Math.max(0, score - 1); // Prevent negative score
+          updateScore();
+          buttons[clickedIndex].classList.add("incorrect");
+          showMessage("Wrong! -1 point.", false);
+          disableOptions();
+          document.getElementById("next-button").style.display = "inline-block";
+        }
+      };
+
+      const handleImageClick = (clickedIndex) => {
+        if (!gameActive) return;
+
+        const isCorrect = clickedIndex === currentRound.correctIndex;
+        const images = document.querySelectorAll(".image-option");
+
+        if (isCorrect) {
+          score++;
+          updateScore();
+          images[clickedIndex].classList.add("correct");
+          showMessage("Correct! Well done!", true);
+          disableOptions();
+          document.getElementById("next-button").style.display = "inline-block";
+        } else {
+          score = Math.max(0, score - 1);
+          updateScore();
+          images[clickedIndex].classList.add("incorrect");
+          showMessage("Wrong! -1 point.", false);
+          disableOptions();
+          document.getElementById("next-button").style.display = "inline-block";
+        }
+      };
+
+      const nextRound = () => {
+        createNewRound();
+      };
+
+      const endGame = () => {
+        gameActive = false;
+        document.getElementById("game-area").style.display = "none";
+        document.getElementById("final-score").textContent = score;
+        document.getElementById("game-over").style.display = "block";
+        saveGameState(); // Save final state
+      };
+
+      const startGame = () => {
+        score = 0;
+        gameActive = true;
+        usedItems.clear(); // Reset used items for new game
+        updateScore();
+        document.getElementById("game-area").style.display = "block";
+        document.getElementById("game-over").style.display = "none";
+        createNewRound();
+        clearGameState(); // Clear old state when starting fresh
+      };
+
+      // Initialize game
+      const initGame = async () => {
+        try {
+          menuItems = await fetch("/menu").then((res) => res.json());
+
+          // Try to load saved game state
+          const hasSavedState = loadGameState();
+
+          if (hasSavedState && gameActive) {
+            // Resume saved game
+            updateScore();
+            document.getElementById("game-area").style.display = "block";
+            document.getElementById("game-over").style.display = "none";
+            createNewRound();
+          } else {
+            // Start new game
+            startGame();
+          }
+        } catch (error) {
+          console.error("Failed to load menu items:", error);
+          document.querySelector(".game-container").innerHTML =
+            "<h1>Error</h1><p>Failed to load menu items. Please try again.</p>";
+        }
+      };
+
+      // Set up event listeners
+      document.getElementById("next-button").onclick = nextRound;
+
+      // Start the game when page loads
+      initGame();
+    </script>
+  </body>
+</html>

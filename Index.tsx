@@ -4,12 +4,13 @@ import { renderToString } from 'react-dom/server';
 import { Elysia } from 'elysia';
 import { staticPlugin } from '@elysiajs/static';
 import { MenuService } from './src/MenuService';
+import fs from 'fs';
+import path from 'path';
 
 const menuService = new MenuService();
 
 
 const app = new Elysia()
-  .use(staticPlugin())
   .use(staticPlugin({ assets: 'public', prefix: '' }))
   // Welcome page route
   // API routes
@@ -211,6 +212,14 @@ const app = new Elysia()
     return {
       alive: true
     };
+  }).get('/menu', async ({ set }) => {
+    const menu = await menuService.getAllMenuItems();
+    return menu;
+  })
+  .get('/game', async ({ set }) => {
+    // return the game.html file
+    set.headers['Content-Type'] = 'text/html; charset=utf-8';
+    return fs.readFileSync(path.join(__dirname, 'public', 'game.html'), 'utf8');
   })
   .listen(3000);
 

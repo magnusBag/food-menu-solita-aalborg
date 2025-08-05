@@ -8,6 +8,23 @@ interface MenuProps {
 
 }
 
+function getWeekNumber(date: Date): number {
+  // Create a copy of the date to avoid modifying the original
+  const d = new Date(date.getTime());
+
+  // Set to nearest Thursday: current date + 4 - current day number
+  // Make Sunday's day number 7
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+
+  // Get first day of year
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+
+  // Calculate full weeks to nearest Thursday
+  const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+
+  return weekNo;
+}
+
 export const Menu = ({ title, menuItems }: MenuProps) => {
   // Function to check if a date is in the past
   const isPastDate = (dateString: string) => {
@@ -81,6 +98,7 @@ export const Menu = ({ title, menuItems }: MenuProps) => {
     <div className="container">
       <header className="menuHeader">
         <h1 className="title">Menu</h1>
+        <a href="/game" className="game-link">🎮 Play Food Matching Game</a>
       </header>
 
       <div className="menuContent">

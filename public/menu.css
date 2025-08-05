@@ -452,6 +452,30 @@ h6 {
   max-width: 1200px;
   margin: 0 auto;
   margin-bottom: 3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.game-link {
+  background: var(--accent-teal);
+  color: var(--text-primary);
+  padding: 12px 24px;
+  text-decoration: none;
+  border: 3px solid var(--border-color);
+  box-shadow: 4px 4px 0px var(--accent-orange);
+  border-radius: var(--border-radius);
+  font-weight: bold;
+  font-size: 1.1rem;
+  transition: all 0.2s ease;
+  display: inline-block;
+}
+
+.game-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 6px 6px 0px var(--accent-orange);
+  background: var(--accent-orange);
 }
 
 .menuHeader:hover {
