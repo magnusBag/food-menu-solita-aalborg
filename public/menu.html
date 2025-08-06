@@ -341,29 +341,13 @@
             try {
               this.loading = true;
               this.error = null;
-              console.log("Loading menu...");
-
-              // Clear cache first to get fresh data with new date format
-              try {
-                await fetch("/cache/clear", { method: "DELETE" });
-                console.log("Cache cleared");
-              } catch (e) {
-                console.log("Could not clear cache:", e);
-              }
 
               const response = await fetch("/menu");
-              console.log("Response status:", response.status);
               if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
               }
 
               this.menuItems = await response.json();
-              console.log(
-                "Menu items loaded:",
-                this.menuItems.length,
-                this.menuItems
-              );
-
               // Scroll to current day after menu is loaded
               this.scrollToCurrentDay();
             } catch (error) {
