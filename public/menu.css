@@ -825,6 +825,9 @@ h6 {
 }
 
 @media (max-width: 768px) {
+  .weekGroup.compact {
+    display: block;
+  }
   .grid {
     grid-template-columns: 1fr;
   }
