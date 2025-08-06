@@ -320,6 +320,9 @@
               }
 
               this.menuItems = await response.json();
+
+              // Scroll to current day after menu is loaded
+              this.scrollToCurrentDay();
             } catch (error) {
               console.error("Error loading menu:", error);
               this.error = "Error loading menu data. Please try again later.";
@@ -504,6 +507,21 @@
                   this.setTheme(e.matches ? "dark" : "light");
                 }
               });
+          },
+
+          scrollToCurrentDay() {
+            // Wait for the DOM to be updated with the menu data
+            this.$nextTick(() => {
+              const currentDayElement = document.querySelector(
+                ".dateGroup.currentDay"
+              );
+              if (currentDayElement) {
+                currentDayElement.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
+              }
+            });
           },
         };
       }
