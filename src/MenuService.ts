@@ -14,7 +14,7 @@ export class MenuService {
     // refresh the menu once a week
     setInterval(async () => {
       await this.refreshMenu();
-    }, 1000 * 60 * 60 * 24 * 7);
+    }, 1000 * 60 * 60 * 24 * 3);
     this.refreshMenu();
   }
 

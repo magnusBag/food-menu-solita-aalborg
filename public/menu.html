@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Menu</title>
+    <link rel="stylesheet" href="/menu.css" />
+    <script
+      defer
+      src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+  </head>
+  <body x-data="menuApp()">
+    <div class="settings-dropdown">
+      <button
+        class="settings-toggle"
+        id="settings-toggle"
+        aria-label="Open settings"
+        @click="toggleSettingsMenu()"
+      >
+        ⚙️
+      </button>
+      <div
+        class="settings-menu"
+        id="settings-menu"
+        :class="{ open: settingsMenuOpen }"
+      >
+        <div class="settings-item">
+          <label for="theme-toggle">Theme:</label>
+          <button
+            class="theme-toggle"
+            id="theme-toggle"
+            aria-label="Toggle dark mode"
+            @click="toggleTheme()"
+            x-text="theme === 'dark' ? '☀️' : '🌙'"
+          ></button>
+        </div>
+        <div class="settings-item">
+          <label for="compact-toggle">View:</label>
+          <div class="toggle-container">
+            <input
+              type="checkbox"
+              id="compact-toggle"
+              class="toggle-input"
+              :checked="compactView"
+              @change="toggleCompactView()"
+              aria-label="Toggle compact view"
+            />
+            <label for="compact-toggle" class="toggle-label">
+              <span
+                class="toggle-text"
+                x-text="compactView ? 'Week' : 'Day'"
+              ></span>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="settings-item">
+          <label for="border-radius-slider">Border Radius:</label>
+          <div class="slider-container">
+            <input
+              type="range"
+              id="border-radius-slider"
+              min="0"
+              max="30"
+              :value="borderRadius"
+              class="radius-slider"
+              aria-label="Adjust border radius"
+              @input="setBorderRadius($event.target.value)"
+            />
+            <span
+              class="slider-value"
+              id="slider-value"
+              x-text="borderRadius + 'px'"
+            ></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="menu-container">
+      <template x-if="loading">
+        <div class="container">
+          <header class="menuHeader">
+            <h1 class="title">Menu</h1>
+            <a href="/game" class="game-link">Match maden spillet 🕹️</a>
+          </header>
+          <div class="menuContent">
+            <p>Loading menu...</p>
+          </div>
+        </div>
+      </template>
+
+      <template x-if="error">
+        <div class="container">
+          <header class="menuHeader">
+            <h1 class="title">Menu</h1>
+            <a href="/game" class="game-link">Match maden spillet 🕹️</a>
+          </header>
+          <div class="menuContent">
+            <p x-text="error"></p>
+          </div>
+        </div>
+      </template>
+
+      <template x-if="!loading && !error">
+        <div class="container" :class="{ compactView: compactView }">
+          <header class="menuHeader">
+            <h1 class="title">Menu</h1>
+            <a href="/game" class="game-link">Match maden spillet 🕹️</a>
+          </header>
+
+          <div class="menuContent">
+            <template
+              x-for="[weekKey, weekData] in Object.entries(processedMenuItems)"
+              :key="weekKey"
+            >
+              <div class="weekGroup" :class="{ compact: compactView }">
+                <div class="weekHeader">
+                  <h2 class="weekTitle">
+                    Week <span x-text="weekData.weekNumber"></span>
+                  </h2>
+                </div>
+
+                <template
+                  x-for="dateKey in weekData.sortedDates"
+                  :key="dateKey"
+                >
+                  <div
+                    class="dateGroup"
+                    :class="{ currentDay: weekData.dates[dateKey].isCurrentDay, compact: compactView }"
+                  >
+                    <div class="dayHeader">
+                      <h3 class="dayName">
+                        <span x-text="weekData.dates[dateKey].danishDay"></span>
+                        <span
+                          class="dateLabel"
+                          x-text="weekData.dates[dateKey].formattedDate"
+                        ></span>
+                        <template x-if="weekData.dates[dateKey].isCurrentDay">
+                          <span class="todayLabel">I dag</span>
+                        </template>
+                      </h3>
+                    </div>
+
+                    <div class="grid" :class="{ compact: compactView }">
+                      <template x-if="weekData.dates[dateKey].items.length > 0">
+                        <template
+                          x-for="item in weekData.dates[dateKey].sortedItems"
+                          :key="item.name"
+                        >
+                          <div
+                            class="card"
+                            :class="{
+                               fullWidth: weekData.dates[dateKey].items.length === 1,
+                               meatDay: item.type === 'meat',
+                               veggieDay: item.type === 'veggie',
+                               compact: compactView
+                             }"
+                          >
+                            <div class="cardImageContainer">
+                              <img
+                                :src="item.imageurl || ''"
+                                :alt="item.name || item.description"
+                                class="cardImage"
+                                loading="lazy"
+                                width="768"
+                                height="574"
+                                decoding="async"
+                              />
+                              <span
+                                class="itemType"
+                                :class="item.type"
+                                x-text="item.type"
+                              ></span>
+                            </div>
+
+                            <div class="cardContent">
+                              <h3 class="cardTitle" x-text="item.name"></h3>
+                              <p
+                                class="cardDescription"
+                                x-text="item.description === item.name ? '' : item.description"
+                              ></p>
+                            </div>
+                          </div>
+                        </template>
+                      </template>
+                      <template
+                        x-if="weekData.dates[dateKey].items.length === 0"
+                      >
+                        <div class="card empty-card">
+                          <div class="cardContent">
+                            <p class="no-menu-text">No menu available</p>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </template>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <script>
+      function menuApp() {
+        return {
+          // Data
+          menuItems: [],
+          loading: true,
+          error: null,
+          theme: "light",
+          compactView: true,
+          borderRadius: 15,
+          settingsMenuOpen: false,
+
+          // Computed
+          get processedMenuItems() {
+            if (!this.menuItems.length) return {};
+
+            // Get current week number
+            const currentWeek = this.getWeekNumber(new Date());
+
+            // Create weeks from current week onwards (show next 8 weeks)
+            const weeksToShow = 8;
+            const itemsByWeek = {};
+
+            // Generate Monday-Friday for each week
+            for (let weekOffset = 0; weekOffset < weeksToShow; weekOffset++) {
+              const weekNumber = currentWeek + weekOffset;
+              const weekKey = `week-${weekNumber}`;
+
+              // Get the Monday of this week
+              const mondayOfWeek = this.getMondayOfWeek(weekNumber);
+
+              itemsByWeek[weekKey] = {
+                weekNumber: weekNumber,
+                dates: {},
+                sortedDates: [],
+              };
+
+              // Generate Monday to Friday for this week
+              for (let dayOffset = 0; dayOffset < 5; dayOffset++) {
+                const currentDate = new Date(mondayOfWeek);
+                currentDate.setDate(mondayOfWeek.getDate() + dayOffset);
+
+                // Format date to match the Danish format used in menu data (dd/mm/yyyy)
+                const dateKey = currentDate.toLocaleDateString("dk-DK", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                });
+
+                // Check if we have menu items for this date
+                const menuItemsForDate = this.menuItems.filter(
+                  (item) => item.date === dateKey
+                );
+
+                itemsByWeek[weekKey].dates[dateKey] = {
+                  items: menuItemsForDate,
+                  isPast: this.isPastDate(dateKey),
+                  isCurrentDay: this.isToday(dateKey),
+                  danishDay: this.getDanishDayOfWeek(currentDate),
+                  formattedDate: currentDate.toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                  }),
+                };
+
+                // Sort items for this date (meat first, then veggie)
+                itemsByWeek[weekKey].dates[dateKey].sortedItems =
+                  menuItemsForDate.sort((a) => (a.type === "meat" ? -1 : 1));
+              }
+
+              // Sort dates within the week (Monday to Friday)
+              itemsByWeek[weekKey].sortedDates = Object.keys(
+                itemsByWeek[weekKey].dates
+              ).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+            }
+
+            // Filter out weeks that are completely in the past
+            const filteredItemsByWeek = {};
+            Object.keys(itemsByWeek).forEach((weekKey) => {
+              const week = itemsByWeek[weekKey];
+
+              // Check if any date in this week is today or in the future
+              const hasCurrentOrFutureDates = week.sortedDates.some(
+                (dateKey) => {
+                  const dateData = week.dates[dateKey];
+                  return !dateData.isPast || dateData.isCurrentDay;
+                }
+              );
+
+              if (hasCurrentOrFutureDates) {
+                filteredItemsByWeek[weekKey] = week;
+              }
+            });
+
+            return filteredItemsByWeek;
+          },
+
+          // Methods
+          async init() {
+            this.loadSettings();
+            await this.loadMenu();
+            this.setupEventListeners();
+          },
+
+          async loadMenu() {
+            try {
+              this.loading = true;
+              this.error = null;
+
+              const response = await fetch("/menu");
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+
+              this.menuItems = await response.json();
+            } catch (error) {
+              console.error("Error loading menu:", error);
+              this.error = "Error loading menu data. Please try again later.";
+            } finally {
+              this.loading = false;
+            }
+          },
+
+          // Utility functions
+          getWeekNumber(date) {
+            // Create a new date object from the input to avoid modifying the original
+            const d = new Date(
+              Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+            );
+
+            // Set the date to the nearest Thursday, which is in the same ISO week
+            // Sunday is 0, Monday is 1, ..., Saturday is 6
+            // To get to Thursday (day 4), we adjust the date
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+
+            // Get the beginning of the year
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+
+            // Calculate the week number
+            // The week number is the number of weeks between the year start and our Thursday
+            // divided by 7 days, rounded up to account for the first week.
+            return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+          },
+
+          getMondayOfWeek(weekNumber) {
+            // Get the first Thursday of the year
+            const year = new Date().getFullYear();
+            const firstThursday = new Date(year, 0, 1);
+            while (firstThursday.getDay() !== 4) {
+              firstThursday.setDate(firstThursday.getDate() + 1);
+            }
+
+            // Calculate the Thursday of the target week
+            const targetThursday = new Date(firstThursday.getTime());
+            targetThursday.setDate(
+              firstThursday.getDate() + (weekNumber - 1) * 7
+            );
+
+            // Get Monday of that week (3 days before Thursday)
+            const monday = new Date(targetThursday.getTime());
+            monday.setDate(targetThursday.getDate() - 3);
+
+            return monday;
+          },
+
+          isPastDate(dateString) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Parse Danish date format (dd/mm/yyyy)
+            const [day, month, year] = dateString.split("/");
+            const itemDate = new Date(
+              parseInt(year),
+              parseInt(month) - 1,
+              parseInt(day)
+            );
+            itemDate.setHours(0, 0, 0, 0);
+
+            return itemDate < today;
+          },
+
+          isToday(dateString) {
+            // Get today's date and set the time to midnight
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Parse the date string assuming a US format (mm/dd/yyyy)
+            const [month, day, year] = dateString.split("/");
+
+            const itemDate = new Date(
+              parseInt(year),
+              parseInt(month) - 1,
+              parseInt(day)
+            );
+
+            // Set the itemDate's time to midnight for a fair comparison
+            itemDate.setHours(0, 0, 0, 0);
+
+            // Compare the dates
+            return itemDate.getTime() === today.getTime();
+          },
+
+          getDanishDayOfWeek(date) {
+            // Accept either Date object or date string
+            let dateObj;
+            if (date instanceof Date) {
+              dateObj = date;
+            } else {
+              // Parse Danish date format (dd/mm/yyyy)
+              const [day, month, year] = date.split("/");
+              dateObj = new Date(
+                parseInt(year),
+                parseInt(month) - 1,
+                parseInt(day)
+              );
+            }
+
+            const danishDays = [
+              "Søndag",
+              "Mandag",
+              "Tirsdag",
+              "Onsdag",
+              "Torsdag",
+              "Fredag",
+              "Lørdag",
+            ];
+            return danishDays[dateObj.getDay()];
+          },
+
+          // Settings functions
+          loadSettings() {
+            // Load theme
+            const savedTheme = localStorage.getItem("theme");
+            if (savedTheme) {
+              this.theme = savedTheme;
+            } else {
+              const prefersDark = window.matchMedia(
+                "(prefers-color-scheme: dark)"
+              ).matches;
+              this.theme = prefersDark ? "dark" : "light";
+            }
+            this.setTheme(this.theme);
+
+            // Load compact view
+            this.compactView = localStorage.getItem("compactView") === "true";
+
+            // Load border radius
+            const savedBorderRadius =
+              localStorage.getItem("borderRadius") || "15";
+            this.borderRadius = parseInt(savedBorderRadius);
+            this.setBorderRadius(this.borderRadius);
+          },
+
+          setTheme(theme) {
+            this.theme = theme;
+            document.documentElement.setAttribute("data-theme", theme);
+            localStorage.setItem("theme", theme);
+          },
+
+          toggleTheme() {
+            const newTheme = this.theme === "light" ? "dark" : "light";
+            this.setTheme(newTheme);
+          },
+
+          toggleCompactView() {
+            this.compactView = !this.compactView;
+            localStorage.setItem("compactView", this.compactView.toString());
+          },
+
+          toggleSettingsMenu() {
+            this.settingsMenuOpen = !this.settingsMenuOpen;
+          },
+
+          setBorderRadius(value) {
+            this.borderRadius = parseInt(value);
+            document.documentElement.style.setProperty(
+              "--border-radius",
+              value + "px"
+            );
+            localStorage.setItem("borderRadius", value.toString());
+          },
+
+          setupEventListeners() {
+            // Close settings menu when clicking outside
+            document.addEventListener("click", (event) => {
+              const dropdown = document.querySelector(".settings-dropdown");
+              if (!dropdown.contains(event.target) && this.settingsMenuOpen) {
+                this.settingsMenuOpen = false;
+              }
+            });
+
+            // Listen for system preference changes
+            window
+              .matchMedia("(prefers-color-scheme: dark)")
+              .addEventListener("change", (e) => {
+                if (!localStorage.getItem("theme")) {
+                  this.setTheme(e.matches ? "dark" : "light");
+                }
+              });
+          },
+        };
+      }
+    </script>
+  </body>
+</html>
