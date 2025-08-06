@@ -3,8 +3,8 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-        "start": "bun run index.ts",
-        "dev": "bun --watch --hot run index.ts"
+        "start": "bun run Index.ts",
+        "dev": "bun --watch --hot run Index.ts"
     },
     "dependencies": {
         "@azure/storage-blob": "^12.26.0",

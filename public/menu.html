@@ -244,14 +244,24 @@
               // Generate Monday to Friday for this week
               for (let dayOffset = 0; dayOffset < 5; dayOffset++) {
                 const currentDate = new Date(mondayOfWeek);
-                currentDate.setDate(mondayOfWeek.getDate() + dayOffset);
+                currentDate.setUTCDate(mondayOfWeek.getUTCDate() + dayOffset);
 
                 // Format date to match the Danish format used in menu data (dd/mm/yyyy)
-                const dateKey = currentDate.toLocaleDateString("dk-DK", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                });
+                // Use UTC to ensure consistent date formatting
+                const utcDate = new Date(
+                  Date.UTC(
+                    currentDate.getUTCFullYear(),
+                    currentDate.getUTCMonth(),
+                    currentDate.getUTCDate()
+                  )
+                );
+                // Format as dd/mm/yyyy (Danish format)
+                const day = utcDate.getUTCDate().toString().padStart(2, "0");
+                const month = (utcDate.getUTCMonth() + 1)
+                  .toString()
+                  .padStart(2, "0");
+                const year = utcDate.getUTCFullYear();
+                const dateKey = `${day}/${month}/${year}`;
 
                 // Check if we have menu items for this date
                 const menuItemsForDate = this.menuItems.filter(
@@ -262,8 +272,8 @@
                   items: menuItemsForDate,
                   isPast: this.isPastDate(dateKey),
                   isCurrentDay: this.isToday(dateKey),
-                  danishDay: this.getDanishDayOfWeek(currentDate),
-                  formattedDate: currentDate.toLocaleDateString("en-GB", {
+                  danishDay: this.getDanishDayOfWeek(utcDate),
+                  formattedDate: utcDate.toLocaleDateString("en-GB", {
                     day: "2-digit",
                     month: "2-digit",
                     year: "numeric",
@@ -278,7 +288,25 @@
               // Sort dates within the week (Monday to Friday)
               itemsByWeek[weekKey].sortedDates = Object.keys(
                 itemsByWeek[weekKey].dates
-              ).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
+              ).sort((a, b) => {
+                const [dayA, monthA, yearA] = a.split("/");
+                const [dayB, monthB, yearB] = b.split("/");
+                const dateA = new Date(
+                  Date.UTC(
+                    parseInt(yearA),
+                    parseInt(monthA) - 1,
+                    parseInt(dayA)
+                  )
+                );
+                const dateB = new Date(
+                  Date.UTC(
+                    parseInt(yearB),
+                    parseInt(monthB) - 1,
+                    parseInt(dayB)
+                  )
+                );
+                return dateA.getTime() - dateB.getTime();
+              });
             }
 
             // Filter out weeks that are completely in the past
@@ -313,13 +341,28 @@
             try {
               this.loading = true;
               this.error = null;
+              console.log("Loading menu...");
+
+              // Clear cache first to get fresh data with new date format
+              try {
+                await fetch("/cache/clear", { method: "DELETE" });
+                console.log("Cache cleared");
+              } catch (e) {
+                console.log("Could not clear cache:", e);
+              }
 
               const response = await fetch("/menu");
+              console.log("Response status:", response.status);
               if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
               }
 
               this.menuItems = await response.json();
+              console.log(
+                "Menu items loaded:",
+                this.menuItems.length,
+                this.menuItems
+              );
 
               // Scroll to current day after menu is loaded
               this.scrollToCurrentDay();
@@ -335,7 +378,11 @@
           getWeekNumber(date) {
             // Create a new date object from the input to avoid modifying the original
             const d = new Date(
-              Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+              Date.UTC(
+                date.getUTCFullYear(),
+                date.getUTCMonth(),
+                date.getUTCDate()
+              )
             );
 
             // Set the date to the nearest Thursday, which is in the same ISO week
@@ -353,29 +400,28 @@
           },
 
           getMondayOfWeek(weekNumber) {
-            // Get the first Thursday of the year
-            const year = new Date().getFullYear();
-            const firstThursday = new Date(year, 0, 1);
-            while (firstThursday.getDay() !== 4) {
-              firstThursday.setDate(firstThursday.getDate() + 1);
+            // Get the first Thursday of the year in UTC
+            const year = new Date().getUTCFullYear();
+            const firstThursday = new Date(Date.UTC(year, 0, 1));
+            while (firstThursday.getUTCDay() !== 4) {
+              firstThursday.setUTCDate(firstThursday.getUTCDate() + 1);
             }
 
             // Calculate the Thursday of the target week
             const targetThursday = new Date(firstThursday.getTime());
-            targetThursday.setDate(
-              firstThursday.getDate() + (weekNumber - 1) * 7
+            targetThursday.setUTCDate(
+              firstThursday.getUTCDate() + (weekNumber - 1) * 7
             );
 
             // Get Monday of that week (3 days before Thursday)
             const monday = new Date(targetThursday.getTime());
-            monday.setDate(targetThursday.getDate() - 3);
+            monday.setUTCDate(targetThursday.getUTCDate() - 3);
 
             return monday;
           },
 
           isPastDate(dateString) {
             const today = new Date();
-            today.setHours(0, 0, 0, 0);
 
             // Parse Danish date format (dd/mm/yyyy)
             const [day, month, year] = dateString.split("/");
@@ -384,30 +430,43 @@
               parseInt(month) - 1,
               parseInt(day)
             );
-            itemDate.setHours(0, 0, 0, 0);
 
-            return itemDate < today;
+            // Set both dates to midnight for fair comparison
+            const todayMidnight = new Date(
+              today.getFullYear(),
+              today.getMonth(),
+              today.getDate()
+            );
+            const itemMidnight = new Date(
+              itemDate.getFullYear(),
+              itemDate.getMonth(),
+              itemDate.getDate()
+            );
+
+            return itemMidnight < todayMidnight;
           },
 
           isToday(dateString) {
-            // Get today's date and set the time to midnight
+            // Get today's date
             const today = new Date();
-            today.setHours(0, 0, 0, 0);
 
-            // Parse the date string assuming a US format (mm/dd/yyyy)
-            const [month, day, year] = dateString.split("/");
+            // Parse the date string in Danish format (dd/mm/yyyy)
+            const [day, month, year] = dateString.split("/");
 
+            // Create a date object for the item date
             const itemDate = new Date(
               parseInt(year),
               parseInt(month) - 1,
               parseInt(day)
             );
 
-            // Set the itemDate's time to midnight for a fair comparison
-            itemDate.setHours(0, 0, 0, 0);
+            // Compare year, month, and day
+            const isToday =
+              today.getFullYear() === itemDate.getFullYear() &&
+              today.getMonth() === itemDate.getMonth() &&
+              today.getDate() === itemDate.getDate();
 
-            // Compare the dates
-            return itemDate.getTime() === today.getTime();
+            return isToday;
           },
 
           getDanishDayOfWeek(date) {
@@ -419,9 +478,7 @@
               // Parse Danish date format (dd/mm/yyyy)
               const [day, month, year] = date.split("/");
               dateObj = new Date(
-                parseInt(year),
-                parseInt(month) - 1,
-                parseInt(day)
+                Date.UTC(parseInt(year), parseInt(month) - 1, parseInt(day))
               );
             }
 
@@ -434,7 +491,7 @@
               "Fredag",
               "Lørdag",
             ];
-            return danishDays[dateObj.getDay()];
+            return danishDays[dateObj.getUTCDay()];
           },
 
           // Settings functions

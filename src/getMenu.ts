@@ -1,7 +1,9 @@
 import { MenuItem } from "../models/menu";
 
 export const getMenu = async () => {
+  console.log("Getting token...");
   const token = await getToken();
+  console.log("Token obtained, fetching menu data...");
 
   const res = await fetch("https://app.kanpla.dk/api/internal/load/frontend", {
     headers: {
@@ -30,6 +32,7 @@ export const getMenu = async () => {
   });
 
   const data = await res.json();
+  console.log("API response received, processing menu data...");
   // look for the menu items under the dates list, "offers" -> "inPjWPmEozlHYlIJEiep" -> "items" -> "dates"
   const meatDates = data.offers.inPjWPmEozlHYlIJEiep.items[0].dates;
   const veggieDates = data.offers.inPjWPmEozlHYlIJEiep.items[1].dates;
@@ -48,11 +51,18 @@ export const getMenu = async () => {
 
   // format date
   menu.forEach((x: MenuItem) => {
-    x.date = new Date(x.dateSeconds * 1000).toLocaleDateString("dk-DK", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+    // Use UTC to avoid timezone issues
+    const date = new Date(x.dateSeconds * 1000);
+    const utcDate = new Date(
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+    );
+
+    // Format as dd/mm/yyyy (Danish format)
+    const day = utcDate.getUTCDate().toString().padStart(2, "0");
+    const month = (utcDate.getUTCMonth() + 1).toString().padStart(2, "0");
+    const year = utcDate.getUTCFullYear();
+    x.date = `${day}/${month}/${year}`;
+
     if (x.name.length == 0) x.name = x.description;
   });
 

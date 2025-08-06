@@ -19,6 +19,7 @@ export class MenuService {
   }
 
   private async refreshMenu(): Promise<void> {
+    console.log("Starting menu refresh...");
     const menu = await getMenu();
     // After all items are loaded, get all existing items and make sure we dont load the same items twice
     const existingItems = await this.getAllMenuItems();
@@ -131,7 +132,7 @@ export class MenuService {
             const containerName = sasUrlObj.pathname.split("/")[1]; // Extract container name from path
 
             // Create the full blob URL with SAS token for the new blob
-            const blobSasUrl = `${sasUrlObj.origin}/${containerName}/${blobName}${sasUrlObj.search}`;
+            const blobSasUrl = `${sasUrlObj.origin}${containerName}/${blobName}${sasUrlObj.search}`;
 
             console.log(
               `Uploading image for '${item.name}' to blob storage...`
@@ -154,7 +155,7 @@ export class MenuService {
             }
 
             // Get the URL of the uploaded blob (without the SAS token for public access)
-            const publicBlobUrl = `${sasUrlObj.origin}/${containerName}/${blobName}`;
+            const publicBlobUrl = `${sasUrlObj.origin}${containerName}/${blobName}`;
             imageUrl = publicBlobUrl;
             console.log(`Image uploaded successfully to: ${publicBlobUrl}`);
           } catch (uploadError) {
