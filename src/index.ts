@@ -118,7 +118,7 @@ app.post("/user/name", async (c) => {
   return c.json({ success: true, userName });
 });
 
-app.post("/score/increment", async (c) => {
+app.post("/score/inc", async (c) => {
   const user = await getOrSetUser(c, db);
   if (!user) return c.json({ error: "User not found" }, 400);
   const newScore = (user.score ?? 0) + 1;
@@ -132,7 +132,7 @@ app.post("/score/increment", async (c) => {
   return c.json({ score: newScore });
 });
 
-app.post("/score/decrement", async (c) => {
+app.post("/score/dec", async (c) => {
   const user = await getOrSetUser(c, db);
   if (!user) return c.json({ error: "User not found" }, 400);
   const newScore = Math.max(0, (user.score ?? 0) - 1);
@@ -143,4 +143,14 @@ app.post("/score/decrement", async (c) => {
   return c.json({ score: newScore });
 });
 
+app.post("/score/increment", async (c) => {
+  const user = await getOrSetUser(c, db);
+  if (!user) return c.json({ error: "User not found" }, 400);
+  const newScore = Math.max(0, (user.score ?? 0) - 1);
+  await db
+    .update(users)
+    .set({ score: newScore })
+    .where(eq(users.cookie, user.cookie));
+  return c.json({ score: newScore });
+});
 export default app;

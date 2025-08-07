@@ -830,7 +830,7 @@
         const buttons = document.querySelectorAll(".option-button");
 
         if (isCorrect) {
-          await fetch("/score/increment", {
+          await fetch("/score/inc", {
             method: "POST",
             credentials: "include",
           });
@@ -840,7 +840,7 @@
           disableOptions();
           document.getElementById("next-button").style.display = "inline-block";
         } else {
-          await fetch("/score/decrement", {
+          await fetch("/score/dec", {
             method: "POST",
             credentials: "include",
           });
@@ -859,7 +859,7 @@
         const images = document.querySelectorAll(".image-option");
 
         if (isCorrect) {
-          await fetch("/score/increment", {
+          await fetch("/score/inc", {
             method: "POST",
             credentials: "include",
           });
