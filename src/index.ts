@@ -123,13 +123,7 @@ app.post("/score/increment", async (c) => {
   if (!user) return c.json({ error: "User not found" }, 400);
   const newScore = (user.score ?? 0) + 1;
   if (user.id === 4) {
-    return c.json(
-      {
-        score: -1,
-        message: "You are not allowed to increment the score.",
-      },
-      403
-    );
+    return c.redirect("https://www.youtube.com/watch?v=dQw4w9WgXcQ"); // Rickroll
   }
   await db
     .update(users)
