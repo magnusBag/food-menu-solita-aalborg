@@ -84,10 +84,9 @@ app.get("/leaderboard", async (c) => {
 // Leaderboard API route
 app.get("/leaderboard/api", async (c) => {
   const results = await db
-    .select()
+    .select({ score: users.score, userName: users.userName })
     .from(users)
-    .orderBy(desc(users.score))
-    .limit(10);
+    .orderBy(desc(users.score));
   return c.json(results);
 });
 
