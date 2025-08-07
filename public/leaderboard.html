@@ -105,7 +105,15 @@
             },
           });
           const data = await res.json();
-          return Array.isArray(data) ? data : [];
+          // Defensive: coerce to safe strings client-side as well
+          const toSafe = (s) =>
+            typeof s === "string" ? s.slice(0, 22) : "Guest";
+          return Array.isArray(data)
+            ? data.map((e) => ({
+                userName: toSafe(e?.userName),
+                score: Number.isFinite(e?.score) ? e.score : 0,
+              }))
+            : [];
         } catch (e) {
           return [];
         }
@@ -116,11 +124,15 @@
         tbody.innerHTML = "";
         entries.forEach((entry, idx) => {
           const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${idx + 1}</td>
-            <td>${entry.userName || "Guest"}</td>
-            <td>${entry.score ?? 0}</td>
-          `;
+          const tdRank = document.createElement("td");
+          tdRank.textContent = String(idx + 1);
+          const tdName = document.createElement("td");
+          tdName.textContent = entry?.userName || "Guest";
+          const tdScore = document.createElement("td");
+          tdScore.textContent = String(entry?.score ?? 0);
+          tr.appendChild(tdRank);
+          tr.appendChild(tdName);
+          tr.appendChild(tdScore);
           tbody.appendChild(tr);
         });
       }

@@ -258,3 +258,16 @@ export class MenuService {
     await this.client.end();
   }
 }
+
+// Singleton accessor to avoid multiple interval schedulers and DB clients
+declare global {
+  // eslint-disable-next-line no-var
+  var __menuServiceSingleton: MenuService | undefined;
+}
+
+export function getMenuService(): MenuService {
+  if (!globalThis.__menuServiceSingleton) {
+    globalThis.__menuServiceSingleton = new MenuService();
+  }
+  return globalThis.__menuServiceSingleton;
+}
