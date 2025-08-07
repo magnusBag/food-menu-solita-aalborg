@@ -344,6 +344,55 @@
         animation: brutalFadeIn 0.6s ease forwards;
       }
 
+      /* Username Modal Styles */
+      .username-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      }
+      .username-modal-box {
+        background: #fff;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+        text-align: center;
+      }
+      .username-modal-label {
+        display: block;
+        margin-bottom: 1rem;
+      }
+      .username-modal-input {
+        font-size: 1.2rem;
+        padding: 0.5rem;
+        margin-bottom: 1rem;
+        width: 80%;
+      }
+      .username-modal-error {
+        color: red;
+        margin-bottom: 1rem;
+      }
+      .username-modal-button {
+        font-size: 1.2rem;
+        padding: 0.5rem 2rem;
+        background: #4ecdc4;
+        color: #000;
+        border: none;
+        cursor: pointer;
+        font-weight: bold;
+      }
+      .user-name {
+        color: var(--text-primary);
+        position: absolute;
+        top: 1rem;
+      }
+
       /* Responsive adjustments */
       @media (max-width: 768px) {
         .game-container {
@@ -423,6 +472,24 @@
         correctIndex: 0,
       };
       let score = 0;
+      let userName = "Guest";
+      // Fetch score from backend
+      const fetchScore = async () => {
+        try {
+          const res = await fetch("/score", { credentials: "include" });
+          const data = await res.json();
+          score = data.score || 0;
+          userName = data.userName || "Guest";
+          updateScore();
+          if (userName === "Guest") {
+            promptForUserName();
+          }
+        } catch (e) {
+          score = 0;
+          userName = "Guest";
+          updateScore();
+        }
+      };
       let gameActive = false;
       let currentMode = "image-to-name";
       let usedItems = new Set(); // Track used items to avoid repetition
@@ -540,7 +607,68 @@
 
       const updateScore = () => {
         document.getElementById("score").textContent = score;
-        saveGameState(); // Save state whenever score changes
+      };
+
+      const promptForUserName = () => {
+        if (document.getElementById("username-modal")) return;
+        const modal = document.createElement("div");
+        modal.id = "username-modal";
+        modal.className = "username-modal";
+
+        const box = document.createElement("div");
+        box.className = "username-modal-box";
+
+        const label = document.createElement("label");
+        label.textContent = "Enter your username:";
+        label.className = "username-modal-label";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.maxLength = 32;
+        input.minLength = 2;
+        input.className = "username-modal-input";
+
+        const error = document.createElement("div");
+        error.className = "username-modal-error";
+
+        const button = document.createElement("button");
+        button.textContent = "Save";
+        button.className = "username-modal-button";
+        button.onclick = async () => {
+          const val = input.value.trim();
+          if (val.length < 2 || val.length > 32) {
+            error.textContent = "Username must be 2-32 characters.";
+            return;
+          }
+          button.disabled = true;
+          try {
+            const res = await fetch("/user/name", {
+              method: "POST",
+              credentials: "include",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ userName: val }),
+            });
+            const data = await res.json();
+            if (data.success) {
+              userName = val;
+              updateUserName();
+              document.body.removeChild(modal);
+            } else {
+              error.textContent = data.error || "Failed to save username.";
+              button.disabled = false;
+            }
+          } catch (e) {
+            error.textContent = "Network error.";
+            button.disabled = false;
+          }
+        };
+
+        box.appendChild(label);
+        box.appendChild(input);
+        box.appendChild(error);
+        box.appendChild(button);
+        modal.appendChild(box);
+        document.body.appendChild(modal);
       };
 
       const showMessage = (text, isCorrect) => {
@@ -699,22 +827,28 @@
         });
       };
 
-      const handleOptionClick = (clickedIndex) => {
+      const handleOptionClick = async (clickedIndex) => {
         if (!gameActive) return;
 
         const isCorrect = clickedIndex === currentRound.correctIndex;
         const buttons = document.querySelectorAll(".option-button");
 
         if (isCorrect) {
-          score++;
-          updateScore();
+          await fetch("/score/increment", {
+            method: "POST",
+            credentials: "include",
+          });
+          await fetchScore();
           buttons[clickedIndex].classList.add("correct");
           showMessage("Correct! Well done!", true);
           disableOptions();
           document.getElementById("next-button").style.display = "inline-block";
         } else {
-          score = Math.max(0, score - 1); // Prevent negative score
-          updateScore();
+          await fetch("/score/decrement", {
+            method: "POST",
+            credentials: "include",
+          });
+          await fetchScore();
           buttons[clickedIndex].classList.add("incorrect");
           showMessage("Wrong! -1 point.", false);
           disableOptions();
@@ -722,22 +856,28 @@
         }
       };
 
-      const handleImageClick = (clickedIndex) => {
+      const handleImageClick = async (clickedIndex) => {
         if (!gameActive) return;
 
         const isCorrect = clickedIndex === currentRound.correctIndex;
         const images = document.querySelectorAll(".image-option");
 
         if (isCorrect) {
-          score++;
-          updateScore();
+          await fetch("/score/increment", {
+            method: "POST",
+            credentials: "include",
+          });
+          await fetchScore();
           images[clickedIndex].classList.add("correct");
           showMessage("Correct! Well done!", true);
           disableOptions();
           document.getElementById("next-button").style.display = "inline-block";
         } else {
-          score = Math.max(0, score - 1);
-          updateScore();
+          await fetch("/score/decrement", {
+            method: "POST",
+            credentials: "include",
+          });
+          await fetchScore();
           images[clickedIndex].classList.add("incorrect");
           showMessage("Wrong! -1 point.", false);
           disableOptions();
@@ -749,43 +889,28 @@
         createNewRound();
       };
 
-      const endGame = () => {
+      const endGame = async () => {
         gameActive = false;
         document.getElementById("game-area").style.display = "none";
+        await fetchScore();
         document.getElementById("final-score").textContent = score;
         document.getElementById("game-over").style.display = "block";
-        saveGameState(); // Save final state
       };
 
-      const startGame = () => {
-        score = 0;
+      const startGame = async () => {
         gameActive = true;
         usedItems.clear(); // Reset used items for new game
-        updateScore();
+        await fetchScore();
         document.getElementById("game-area").style.display = "block";
         document.getElementById("game-over").style.display = "none";
         createNewRound();
-        clearGameState(); // Clear old state when starting fresh
       };
 
       // Initialize game
       const initGame = async () => {
         try {
           menuItems = await fetch("/menu").then((res) => res.json());
-
-          // Try to load saved game state
-          const hasSavedState = loadGameState();
-
-          if (hasSavedState && gameActive) {
-            // Resume saved game
-            updateScore();
-            document.getElementById("game-area").style.display = "block";
-            document.getElementById("game-over").style.display = "none";
-            createNewRound();
-          } else {
-            // Start new game
-            startGame();
-          }
+          await startGame();
         } catch (error) {
           console.error("Failed to load menu items:", error);
           document.querySelector(".game-container").innerHTML =

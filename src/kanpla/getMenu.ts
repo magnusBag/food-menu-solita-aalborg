@@ -1,4 +1,4 @@
-import { MenuItem } from "../models/menu";
+import { MenuItem } from "../models/menuItem";
 
 export const getMenu = async () => {
   console.log("Getting token...");

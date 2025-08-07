@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Leaderboard</title>
+    <link rel="stylesheet" href="menu.css" />
+    <style>
+      .leaderboard-container {
+        max-width: 600px;
+        margin: 3rem auto;
+        background: var(--card-bg, #fff);
+        border: 4px solid var(--border-color, #000);
+        box-shadow: 8px 8px 0px var(--accent-orange, #ff6b35);
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+      }
+      h1 {
+        font-size: 2.5rem;
+        margin-bottom: 2rem;
+        color: var(--text-primary, #000);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-weight: 900;
+        text-shadow: 4px 4px 0px var(--accent-teal, #4ecdc4);
+      }
+      table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 4px solid var(--border-color, #000);
+        margin-bottom: 2rem;
+        box-shadow: 8px 8px 0px var(--accent-orange, #ff6b35);
+        background: var(--card-bg, #fff);
+      }
+      th,
+      td {
+        padding: 1.2rem 1rem;
+        font-size: 1.3rem;
+        text-align: left;
+        font-weight: 900;
+        letter-spacing: 1px;
+      }
+      th {
+        background: var(--accent-teal, #4ecdc4);
+        color: var(--text-primary, #000);
+        text-transform: uppercase;
+        border-bottom: 4px solid var(--border-color, #000);
+      }
+      tr:nth-child(even) {
+        background: var(--accent-teal, #4ecdc4, #e0f7fa);
+      }
+      tr:nth-child(odd) {
+        background: var(--accent-orange, #ff6b35, #fff3e0);
+      }
+      tr:hover {
+        background: var(--hover-bg, #ffe0b2);
+      }
+      tr {
+        transition: all 0.3s ease;
+      }
+      .back-link {
+        display: inline-block;
+        margin-top: 1rem;
+        font-size: 1.1rem;
+        color: var(--accent-orange, #ff6b35);
+        text-decoration: none;
+        font-weight: bold;
+        border: 2px solid var(--accent-orange, #ff6b35);
+        padding: 0.5rem 1.5rem;
+        border-radius: 4px;
+        background: #fff;
+        transition: background 0.2s, color 0.2s;
+      }
+      .back-link:hover {
+        background: var(--accent-orange, #ff6b35);
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="leaderboard-container">
+      <h1>Leaderboard</h1>
+      <table id="leaderboard-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Username</th>
+            <th>Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Leaderboard rows will be inserted here -->
+        </tbody>
+      </table>
+    </div>
+    <script type="module">
+      async function fetchLeaderboard() {
+        try {
+          const res = await fetch("/leaderboard/api", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+          const data = await res.json();
+          return Array.isArray(data) ? data : [];
+        } catch (e) {
+          return [];
+        }
+      }
+
+      function renderLeaderboard(entries) {
+        const tbody = document.querySelector("#leaderboard-table tbody");
+        tbody.innerHTML = "";
+        entries.forEach((entry, idx) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${idx + 1}</td>
+            <td>${entry.userName || "Guest"}</td>
+            <td>${entry.score ?? 0}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      (async () => {
+        const leaderboard = await fetchLeaderboard();
+        renderLeaderboard(leaderboard);
+      })();
+    </script>
+  </body>
+</html>

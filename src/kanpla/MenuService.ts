@@ -1,17 +1,22 @@
-import { Pool } from "pg";
-import { MenuItem } from "../models/menu";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { menuItems } from "../db/schema";
+import { desc } from "drizzle-orm";
+import { Client } from "pg";
+import { MenuItem } from "../models/menuItem";
 import { getMenu } from "./getMenu";
 
 export class MenuService {
-  private pool: Pool;
+  private db;
+  private client;
 
   constructor() {
-    this.pool = new Pool({
-      connectionString: process.env.conn_string,
+    this.client = new Client({
+      connectionString: process.env.DATABASE_URL,
     });
-    this.initializeTable();
+    this.client.connect();
+    this.db = drizzle(this.client);
 
-    // refresh the menu once a week
+    // refresh the menu every 3 days
     setInterval(async () => {
       await this.refreshMenu();
     }, 1000 * 60 * 60 * 24 * 3);
@@ -187,43 +192,30 @@ export class MenuService {
     return `https://images.immediate.co.uk/production/volatile/sites/30/2020/08/chorizo-mozarella-gnocchi-bake-cropped-9ab73a3.jpg?resize=768,574`;
   }
 
-  private async initializeTable(): Promise<void> {
-    const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS menu_items (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) UNIQUE NOT NULL,
-        date VARCHAR(255) NOT NULL,
-        description TEXT,
-        type VARCHAR(100),
-        imageurl VARCHAR(500)
-      );
-    `;
-
-    try {
-      await this.pool.query(createTableQuery);
-    } catch (error) {
-      console.error("Error initializing table:", error);
-    }
-  }
+  // Table creation is now handled by Drizzle migrations or push, so this is not needed
 
   async saveMenuItem(item: MenuItem): Promise<MenuItem | null> {
-    const query = `
-      INSERT INTO menu_items (name, date, description, type, imageUrl)
-      VALUES ($1, $2, $3, $4, $5)
-      ON CONFLICT (name) DO NOTHING
-      RETURNING *;
-    `;
-
     try {
-      const result = await this.pool.query(query, [
-        item.name,
-        item.date,
-        item.description,
-        item.type,
-        item.imageurl,
-      ]);
-
-      return result.rows[0] || null;
+      // Insert, ignore if name already exists
+      const inserted = await this.db
+        .insert(menuItems)
+        .values({
+          name: item.name,
+          date: item.date,
+          description: item.description,
+          type: item.type,
+          imageurl: item.imageurl,
+        })
+        .onConflictDoNothing()
+        .returning();
+      if (!inserted[0]) return null;
+      // Map DB row to MenuItem, fill missing fields with null/defaults
+      return {
+        ...inserted[0],
+        productId: item.productId ?? "",
+        moduleId: item.moduleId ?? "",
+        dateSeconds: item.dateSeconds ?? 0,
+      } as MenuItem;
     } catch (error) {
       console.error("Error saving menu item:", error);
       return null;
@@ -244,11 +236,18 @@ export class MenuService {
   }
 
   async getAllMenuItems(): Promise<MenuItem[]> {
-    const query = "SELECT * FROM menu_items ORDER BY date DESC;";
-
     try {
-      const result = await this.pool.query(query);
-      return result.rows;
+      const result = await this.db
+        .select()
+        .from(menuItems)
+        .orderBy(desc(menuItems.date));
+      // Map DB rows to MenuItem, fill missing fields with null/defaults
+      return result.map((row) => ({
+        ...row,
+        productId: "",
+        moduleId: "",
+        dateSeconds: 0,
+      })) as MenuItem[];
     } catch (error) {
       console.error("Error fetching menu items:", error);
       return [];
@@ -256,6 +255,6 @@ export class MenuService {
   }
 
   async close(): Promise<void> {
-    await this.pool.end();
+    await this.client.end();
   }
 }
