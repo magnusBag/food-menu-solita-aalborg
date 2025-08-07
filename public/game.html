@@ -651,14 +651,12 @@
             const data = await res.json();
             if (data.success) {
               userName = val;
-              updateUserName();
               document.body.removeChild(modal);
             } else {
               error.textContent = data.error || "Failed to save username.";
               button.disabled = false;
             }
           } catch (e) {
-            error.textContent = "Network error.";
             button.disabled = false;
           }
         };
