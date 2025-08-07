@@ -636,8 +636,8 @@
         button.className = "username-modal-button";
         button.onclick = async () => {
           const val = input.value.trim();
-          if (val.length < 2 || val.length > 32) {
-            error.textContent = "Username must be 2-32 characters.";
+          if (val.length < 2 || val.length > 22) {
+            error.textContent = "Username must be 2-22 characters.";
             return;
           }
           button.disabled = true;
