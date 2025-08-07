@@ -776,7 +776,6 @@
         // Display the image
         const imageEl = document.getElementById("food-image");
         imageEl.src = correctItem.imageurl;
-        imageEl.alt = correctItem.name;
 
         // Create option buttons
         const optionsContainer = document.getElementById("options-container");
@@ -818,7 +817,6 @@
 
           const img = document.createElement("img");
           img.src = item.imageurl;
-          img.alt = item.name;
 
           imageDiv.appendChild(img);
           imagesContainer.appendChild(imageDiv);
