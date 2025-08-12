@@ -21,14 +21,6 @@ pagesRouter.get("/game", (c) => {
   return c.html(html);
 });
 
-pagesRouter.get("/duel", (c) => {
-  const html = fs.readFileSync(
-    path.join(process.cwd(), "public", "duel.html"),
-    "utf8"
-  );
-  return c.html(html);
-});
-
 pagesRouter.get("/leaderboard", (c) => {
   const html = fs.readFileSync(
     path.join(process.cwd(), "public", "leaderboard.html"),

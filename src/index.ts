@@ -5,7 +5,6 @@ import { pagesRouter } from "./routes/pages";
 import { menuRouter } from "./routes/menu";
 import { cacheRouter } from "./routes/cache";
 import { gameRouter } from "./routes/game";
-import { duelRouter } from "./routes/duel";
 import { leaderboardRouter } from "./routes/leaderboard";
 import { userRouter } from "./routes/user";
 
@@ -24,8 +23,9 @@ app.route("/", pagesRouter);
 app.route("/", menuRouter);
 app.route("/", cacheRouter);
 app.route("/", gameRouter);
-app.route("/", duelRouter);
 app.route("/", leaderboardRouter);
 app.route("/", userRouter);
+
+console.log(`🔥 Server running on http://localhost:3000`);
 
 export default app;

@@ -559,20 +559,6 @@
               });
           },
 
-          async startDuel() {
-            try {
-              const res = await fetch("/duel/create", {
-                method: "POST",
-                credentials: "include",
-              });
-              const data = await res.json();
-              if (data.duelId) {
-                const url = `/duel?id=${data.duelId}`;
-                window.location.href = url;
-              }
-            } catch (_) {}
-          },
-
           scrollToCurrentDay() {
             // Wait for the DOM to be updated with the menu data
             this.$nextTick(() => {

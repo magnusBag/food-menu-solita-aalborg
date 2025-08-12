@@ -16,10 +16,12 @@ export class MenuService {
     this.client.connect();
     this.db = drizzle(this.client);
 
-    // refresh the menu every 3 days
+    // refresh the menu every day
+    const seconds = Number(process.env.REFRESH_MENU_SEC) || 60 * 60 * 24 * 1;
+
     setInterval(async () => {
       await this.refreshMenu();
-    }, 1000 * 60 * 60 * 24 * 3);
+    }, seconds * 1000);
     this.refreshMenu();
   }
 
