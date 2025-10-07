@@ -92,7 +92,7 @@ const getToken = async () => {
         "x-firebase-gmpid": "1:19720024142:web:a836d7024ea764929dd31f",
       },
       referrerPolicy: "no-referrer",
-      body: '{"returnSecureToken":true,"email":"mba@solita.dk","password":"Solita1234","clientType":"CLIENT_TYPE_WEB"}',
+      body: `{"returnSecureToken":true,"email":"${process.env.KANPLA_EMAIL}","password":"${process.env.KANPLA_PASSWORD}","clientType":"CLIENT_TYPE_WEB"}`,
       method: "POST",
     }
   );
