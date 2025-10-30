@@ -1,4 +1,5 @@
 export type MenuItem = {
+  id?: number;
   description: string;
   name: string;
   productId: string;
@@ -7,4 +8,6 @@ export type MenuItem = {
   type: "meat" | "veggie";
   date: string;
   imageurl?: string;
+  averageRating?: number | null;
+  ratingCount?: number;
 };

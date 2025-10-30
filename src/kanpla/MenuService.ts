@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
-import { menuItems } from "../db/schema";
-import { desc, eq } from "drizzle-orm";
+import { menuItems, menuItemRatings } from "../db/schema";
+import { desc, eq, sql } from "drizzle-orm";
 import { Client } from "pg";
 import { MenuItem } from "../models/menuItem";
 import { getMenu } from "./getMenu";
@@ -217,6 +217,8 @@ export class MenuService {
         productId: item.productId ?? "",
         moduleId: item.moduleId ?? "",
         dateSeconds: item.dateSeconds ?? 0,
+        averageRating: 0,
+        ratingCount: 0,
       } as MenuItem;
     } catch (error) {
       console.error("Error saving menu item:", error);
@@ -240,12 +242,28 @@ export class MenuService {
   async getAllMenuItems(): Promise<MenuItem[]> {
     try {
       const result = await this.db
-        .select()
+        .select({
+          id: menuItems.id,
+          name: menuItems.name,
+          date: menuItems.date,
+          description: menuItems.description,
+          type: menuItems.type,
+          imageurl: menuItems.imageurl,
+          averageRating: sql<number>`COALESCE(AVG(${menuItemRatings.rating}), 0)`,
+          ratingCount: sql<number>`COUNT(${menuItemRatings.id})`,
+        })
         .from(menuItems)
+        .leftJoin(
+          menuItemRatings,
+          eq(menuItemRatings.menuItemId, menuItems.id)
+        )
+        .groupBy(menuItems.id)
         .orderBy(desc(menuItems.date));
       // Map DB rows to MenuItem, fill missing fields with null/defaults
       return result.map((row) => ({
         ...row,
+        averageRating: Number(row.averageRating ?? 0),
+        ratingCount: Number(row.ratingCount ?? 0),
         productId: "",
         moduleId: "",
         dateSeconds: 0,
