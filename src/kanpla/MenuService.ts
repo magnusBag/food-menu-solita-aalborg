@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { menuItems } from "../db/schema";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { Client } from "pg";
 import { MenuItem } from "../models/menuItem";
 import { getMenu } from "./getMenu";
@@ -253,6 +253,47 @@ export class MenuService {
     } catch (error) {
       console.error("Error fetching menu items:", error);
       return [];
+    }
+  }
+
+  async remakeAllImages(): Promise<{ success: boolean; updated: number; errors: number }> {
+    console.log("Starting image regeneration for all menu items...");
+    let updated = 0;
+    let errors = 0;
+
+    try {
+      // Get all menu items
+      const allItems = await this.getAllMenuItems();
+      console.log(`Found ${allItems.length} items to regenerate images for`);
+
+      // Regenerate image for each item
+      for (const item of allItems) {
+        try {
+          console.log(`Regenerating image for: ${item.name}`);
+          const newImageUrl = await this.makeImage(item);
+
+          // Update the item in the database with the new image URL
+          await this.db
+            .update(menuItems)
+            .set({ imageurl: newImageUrl })
+            .where(eq(menuItems.name, item.name));
+
+          updated++;
+          console.log(`✓ Updated image for: ${item.name}`);
+
+          // Add a small delay to avoid rate limiting
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        } catch (error) {
+          console.error(`Error regenerating image for ${item.name}:`, error);
+          errors++;
+        }
+      }
+
+      console.log(`Image regeneration complete. Updated: ${updated}, Errors: ${errors}`);
+      return { success: true, updated, errors };
+    } catch (error) {
+      console.error("Error in remakeAllImages:", error);
+      return { success: false, updated, errors };
     }
   }
 

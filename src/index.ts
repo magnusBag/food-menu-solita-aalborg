@@ -7,6 +7,7 @@ import { cacheRouter } from "./routes/cache";
 import { gameRouter } from "./routes/game";
 import { leaderboardRouter } from "./routes/leaderboard";
 import { userRouter } from "./routes/user";
+import { adminRouter } from "./routes/admin";
 
 const app = new Hono();
 
@@ -25,6 +26,7 @@ app.route("/", cacheRouter);
 app.route("/", gameRouter);
 app.route("/", leaderboardRouter);
 app.route("/", userRouter);
+app.route("/", adminRouter);
 
 console.log(`🔥 Server running on http://localhost:3000`);
 
