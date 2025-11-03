@@ -1,11 +1,4 @@
-import {
-  pgTable,
-  serial,
-  varchar,
-  text,
-  integer,
-  uniqueIndex,
-} from "drizzle-orm/pg-core";
+import { pgTable, serial, varchar, text, integer } from "drizzle-orm/pg-core";
 
 export const menuItems = pgTable("menu_items", {
   id: serial("id").primaryKey(),
@@ -23,23 +16,3 @@ export const users = pgTable("users", {
   score: integer("score").notNull().default(0),
   userName: varchar("user_name", { length: 255 }).notNull().default("Guest"),
 });
-
-export const menuItemRatings = pgTable(
-  "menu_item_ratings",
-  {
-    id: serial("id").primaryKey(),
-    menuItemId: integer("menu_item_id")
-      .notNull()
-      .references(() => menuItems.id, { onDelete: "cascade" }),
-    userId: integer("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    rating: integer("rating").notNull(),
-  },
-  (table) => ({
-    menuItemUserIdx: uniqueIndex("menu_item_user_idx").on(
-      table.menuItemId,
-      table.userId
-    ),
-  })
-);

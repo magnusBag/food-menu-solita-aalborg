@@ -156,7 +156,7 @@
                       <template x-if="weekData.dates[dateKey].items.length > 0">
                         <template
                           x-for="item in weekData.dates[dateKey].sortedItems"
-                          :key="item.id ?? item.name"
+                          :key="item.name"
                         >
                           <div
                             class="card"
@@ -177,41 +177,11 @@
                                 height="574"
                                 decoding="async"
                               />
-                              <div
-                                class="itemMeta"
-                                :class="{ compact: compactView }"
-                              >
-                                <span
-                                  class="ratingBadge"
-                                  :class="{ compact: compactView }"
-                                >
-                                  <template
-                                    x-if="(item.ratingCount ?? 0) > 0"
-                                  >
-                                    <span>
-                                      ⭐
-                                      <span
-                                        class="ratingValue"
-                                        x-text="formatAverage(item.averageRating)"
-                                      ></span>
-                                      <span
-                                        class="ratingCount"
-                                        x-text="`(${item.ratingCount})`"
-                                      ></span>
-                                    </span>
-                                  </template>
-                                  <template
-                                    x-if="(item.ratingCount ?? 0) === 0"
-                                  >
-                                    <span>No ratings yet</span>
-                                  </template>
-                                </span>
-                                <span
-                                  class="itemType"
-                                  :class="item.type"
-                                  x-text="item.type"
-                                ></span>
-                              </div>
+                              <span
+                                class="itemType"
+                                :class="item.type"
+                                x-text="item.type"
+                              ></span>
                             </div>
 
                             <div class="cardContent">
@@ -220,45 +190,6 @@
                                 class="cardDescription"
                                 x-text="item.description === item.name ? '' : item.description"
                               ></p>
-                              <div
-                                class="ratingControls"
-                                :class="{ compact: compactView }"
-                              >
-                                <div class="ratingStars">
-                                  <template x-for="star in [1, 2, 3, 4, 5]" :key="star">
-                                    <button
-                                      type="button"
-                                      class="starButton"
-                                      :class="{ active: getUserRating(item.id) >= star }"
-                                      :disabled="isSubmittingRating(item.id)"
-                                      @click="submitRating(item.id, star)"
-                                      :aria-label="`Rate ${star} star${star > 1 ? 's' : ''}`"
-                                    >
-                                      ★
-                                    </button>
-                                  </template>
-                                </div>
-                                <button
-                                  type="button"
-                                  class="clearRatingButton"
-                                  :class="{ active: getUserRating(item.id) === 0 && item.ratingCount > 0 }"
-                                  :disabled="isSubmittingRating(item.id)"
-                                  @click="submitRating(item.id, 0)"
-                                >
-                                  0★
-                                </button>
-                                <span
-                                  class="ratingStatus"
-                                  x-show="isSubmittingRating(item.id)"
-                                >
-                                  Saving...
-                                </span>
-                                <span
-                                  class="ratingError"
-                                  x-text="ratingErrors[item.id]"
-                                  x-show="ratingErrors[item.id]"
-                                ></span>
-                              </div>
                             </div>
                           </div>
                         </template>
@@ -293,9 +224,6 @@
           compactView: true,
           borderRadius: 15,
           settingsMenuOpen: false,
-          userRatings: {},
-          ratingSubmitting: {},
-          ratingErrors: {},
 
           // Computed
           get processedMenuItems() {
@@ -415,7 +343,6 @@
           async init() {
             this.loadSettings();
             await this.loadMenu();
-            await this.loadUserRatings();
             this.setupEventListeners();
           },
 
@@ -429,12 +356,7 @@
                 throw new Error(`HTTP error! status: ${response.status}`);
               }
 
-              const data = await response.json();
-              this.menuItems = (Array.isArray(data) ? data : []).map((item) => ({
-                ...item,
-                averageRating: Number(item.averageRating ?? 0),
-                ratingCount: Number(item.ratingCount ?? 0),
-              }));
+              this.menuItems = await response.json();
               // Scroll to current day after menu is loaded
               this.scrollToCurrentDay();
             } catch (error) {
@@ -445,116 +367,7 @@
             }
           },
 
-          async loadUserRatings() {
-            try {
-              const response = await fetch("/menu/ratings");
-              if (!response.ok) {
-                return;
-              }
-
-              const data = await response.json();
-              const parsedRatings = {};
-              const entries = Object.entries(data.ratings || {});
-              for (const [key, value] of entries) {
-                const id = Number(key);
-                if (Number.isNaN(id)) continue;
-                parsedRatings[id] = Number(value ?? 0);
-              }
-              this.userRatings = parsedRatings;
-            } catch (error) {
-              console.error("Error loading user ratings:", error);
-            }
-          },
-
           // Utility functions
-          formatAverage(value) {
-            if (value === null || value === undefined) return "0.0";
-            const numeric = Number(value);
-            if (Number.isNaN(numeric)) return "0.0";
-            return numeric.toFixed(1);
-          },
-
-          getUserRating(menuItemId) {
-            if (!menuItemId) return 0;
-            return this.userRatings?.[menuItemId] ?? 0;
-          },
-
-          isSubmittingRating(menuItemId) {
-            if (!menuItemId) return false;
-            return Boolean(this.ratingSubmitting?.[menuItemId]);
-          },
-
-          updateMenuItemRatings(menuItemId, averageRating, ratingCount) {
-            if (!menuItemId) return;
-            const updatedItems = this.menuItems.map((item) => {
-              if (item.id === menuItemId) {
-                return {
-                  ...item,
-                  averageRating,
-                  ratingCount,
-                };
-              }
-              return item;
-            });
-            this.menuItems = updatedItems;
-          },
-
-          async submitRating(menuItemId, rating) {
-            if (!menuItemId && menuItemId !== 0) return;
-            const { [menuItemId]: _ignoredError, ...restErrors } =
-              this.ratingErrors;
-            this.ratingErrors = restErrors;
-            this.ratingSubmitting = {
-              ...this.ratingSubmitting,
-              [menuItemId]: true,
-            };
-
-            try {
-              const response = await fetch(`/menu/${menuItemId}/rating`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ rating }),
-              });
-
-              if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                const message = errorData.error || "Unable to save rating.";
-                this.ratingErrors = {
-                  ...this.ratingErrors,
-                  [menuItemId]: message,
-                };
-                return;
-              }
-
-              const data = await response.json();
-              const average = Number(data.averageRating ?? 0);
-              const count = Number(data.ratingCount ?? 0);
-              this.userRatings = {
-                ...this.userRatings,
-                [menuItemId]: Number(data.userRating ?? 0),
-              };
-              this.updateMenuItemRatings(
-                menuItemId,
-                average,
-                count
-              );
-              const { [menuItemId]: _cleared, ...remainingErrors } =
-                this.ratingErrors;
-              this.ratingErrors = remainingErrors;
-            } catch (error) {
-              console.error("Error saving rating:", error);
-              this.ratingErrors = {
-                ...this.ratingErrors,
-                [menuItemId]: "Could not save rating. Please try again.",
-              };
-            } finally {
-              this.ratingSubmitting = {
-                ...this.ratingSubmitting,
-                [menuItemId]: false,
-              };
-            }
-          },
-
           getWeekNumber(date) {
             // Create a new date object from the input to avoid modifying the original
             const d = new Date(
