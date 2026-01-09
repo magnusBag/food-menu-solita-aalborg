@@ -37,7 +37,7 @@ jobs:
         uses: azure/cli@v2
         with:
           inlineScript: |
-            az group create -n "${AZURE_RESOURCE_GROUP}" -l "westeurope"
+            az group create -n "${AZURE_RESOURCE_GROUP}" -l "swedencentral"
 
       - name: Ensure Container Apps environment exists
         uses: azure/cli@v2
