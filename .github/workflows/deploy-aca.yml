@@ -87,37 +87,47 @@ jobs:
           inlineScript: |
             az extension add --name containerapp --upgrade
 
-            if az containerapp show -g "${AZURE_RESOURCE_GROUP}" -n "${AZURE_CONTAINERAPP_NAME}" 1>/dev/null 2>/dev/null; then
-              az containerapp update \
-                -g "${AZURE_RESOURCE_GROUP}" \
-                -n "${AZURE_CONTAINERAPP_NAME}" \
-                --image "${IMAGE_URI}" \
-                --set-env-vars \
-                  AZURE_STORAGE_CONNECTION_STRING="$AZURE_STORAGE_CONNECTION_STRING" \
-                  AZURE_STORAGE_CONTAINER_NAME="$AZURE_STORAGE_CONTAINER_NAME" \
-                  OPENAI_API_KEY="$OPENAI_API_KEY" \
-                  KANPLA_EMAIL="$KANPLA_EMAIL" \
-                  KANPLA_PASSWORD="$KANPLA_PASSWORD" \
-                  ADMIN_SECRET_TOKEN="$ADMIN_SECRET_TOKEN" \
-                  AUTO_REFRESH_MENU="true"
-            else
+            # Ensure ACR ID is available
+            ACR_ID=$(az acr show --name "${ACR_NAME}" --query id --output tsv)
+
+            if ! az containerapp show -g "${AZURE_RESOURCE_GROUP}" -n "${AZURE_CONTAINERAPP_NAME}" 1>/dev/null 2>/dev/null; then
+              echo "Creating Container App (Bootstrap)..."
               az containerapp create \
                 -g "${AZURE_RESOURCE_GROUP}" \
                 -n "${AZURE_CONTAINERAPP_NAME}" \
                 --environment "${AZURE_CONTAINERAPP_ENV_NAME}" \
-                --image "${IMAGE_URI}" \
-                --target-port 3000 \
+                --image "mcr.microsoft.com/k8s/azure-container-apps/helloworld:latest" \
+                --target-port 80 \
                 --ingress external \
-                --registry-server "${ACR_LOGIN_SERVER}" \
-                --registry-identity system \
                 --cpu 0.25 --memory 0.5Gi \
-                --min-replicas 0 --max-replicas 1 \
-                --env-vars \
-                  AZURE_STORAGE_CONNECTION_STRING="$AZURE_STORAGE_CONNECTION_STRING" \
-                  AZURE_STORAGE_CONTAINER_NAME="$AZURE_STORAGE_CONTAINER_NAME" \
-                  OPENAI_API_KEY="$OPENAI_API_KEY" \
-                  KANPLA_EMAIL="$KANPLA_EMAIL" \
-                  KANPLA_PASSWORD="$KANPLA_PASSWORD" \
-                  ADMIN_SECRET_TOKEN="$ADMIN_SECRET_TOKEN" \
-                  AUTO_REFRESH_MENU="true"
+                --min-replicas 0 --max-replicas 1
             fi
+
+            echo "Ensuring Identity permissions..."
+            # Ensure identity exists (idempotent)
+            az containerapp identity assign -n "${AZURE_CONTAINERAPP_NAME}" -g "${AZURE_RESOURCE_GROUP}" --system-assigned
+            
+            PRINCIPAL_ID=$(az containerapp show -n "${AZURE_CONTAINERAPP_NAME}" -g "${AZURE_RESOURCE_GROUP}" --query identity.principalId -o tsv)
+            
+            # Assign AcrPull role
+            az role assignment create --assignee "$PRINCIPAL_ID" --role AcrPull --scope "$ACR_ID" || true
+            
+            # Wait a bit for propagation
+            sleep 15
+
+            echo "Deploying Application..."
+            az containerapp update \
+              -g "${AZURE_RESOURCE_GROUP}" \
+              -n "${AZURE_CONTAINERAPP_NAME}" \
+              --image "${IMAGE_URI}" \
+              --target-port 3000 \
+              --registry-server "${ACR_LOGIN_SERVER}" \
+              --registry-identity system \
+              --set-env-vars \
+                AZURE_STORAGE_CONNECTION_STRING="$AZURE_STORAGE_CONNECTION_STRING" \
+                AZURE_STORAGE_CONTAINER_NAME="$AZURE_STORAGE_CONTAINER_NAME" \
+                OPENAI_API_KEY="$OPENAI_API_KEY" \
+                KANPLA_EMAIL="$KANPLA_EMAIL" \
+                KANPLA_PASSWORD="$KANPLA_PASSWORD" \
+                ADMIN_SECRET_TOKEN="$ADMIN_SECRET_TOKEN" \
+                AUTO_REFRESH_MENU="true"
