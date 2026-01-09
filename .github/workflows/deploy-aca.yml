@@ -113,3 +113,4 @@ jobs:
                   KANPLA_PASSWORD="${{ secrets.KANPLA_PASSWORD }}" \
                   ADMIN_SECRET_TOKEN="${{ secrets.ADMIN_SECRET_TOKEN }}" \
                   AUTO_REFRESH_MENU="true"
+            fi
