@@ -51,11 +51,20 @@ jobs:
               az containerapp env create -g "${AZURE_RESOURCE_GROUP}" -n "${AZURE_CONTAINERAPP_ENV_NAME}" -l "westeurope"
             fi
 
-      - name: ACR login
+      - name: Get ACR access token
+        id: acr
         uses: azure/cli@v2
         with:
           inlineScript: |
-            az acr login -n "${ACR_NAME}"
+            TOKEN=$(az acr login -n "${ACR_NAME}" --expose-token --output tsv --query accessToken)
+            echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Docker login to ACR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ACR_LOGIN_SERVER }}
+          username: 00000000-0000-0000-0000-000000000000
+          password: ${{ steps.acr.outputs.token }}
 
       - name: Build and push image
         run: |
