@@ -76,6 +76,13 @@ jobs:
 
       - name: Deploy to Azure Container Apps
         uses: azure/cli@v2
+        env:
+          AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
+          AZURE_STORAGE_CONTAINER_NAME: ${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          KANPLA_EMAIL: ${{ secrets.KANPLA_EMAIL }}
+          KANPLA_PASSWORD: ${{ secrets.KANPLA_PASSWORD }}
+          ADMIN_SECRET_TOKEN: ${{ secrets.ADMIN_SECRET_TOKEN }}
         with:
           inlineScript: |
             az extension add --name containerapp --upgrade
@@ -86,12 +93,12 @@ jobs:
                 -n "${AZURE_CONTAINERAPP_NAME}" \
                 --image "${IMAGE_URI}" \
                 --set-env-vars \
-                  AZURE_STORAGE_CONNECTION_STRING="${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
-                  AZURE_STORAGE_CONTAINER_NAME="${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}" \
-                  OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
-                  KANPLA_EMAIL="${{ secrets.KANPLA_EMAIL }}" \
-                  KANPLA_PASSWORD="${{ secrets.KANPLA_PASSWORD }}" \
-                  ADMIN_SECRET_TOKEN="${{ secrets.ADMIN_SECRET_TOKEN }}" \
+                  AZURE_STORAGE_CONNECTION_STRING="$AZURE_STORAGE_CONNECTION_STRING" \
+                  AZURE_STORAGE_CONTAINER_NAME="$AZURE_STORAGE_CONTAINER_NAME" \
+                  OPENAI_API_KEY="$OPENAI_API_KEY" \
+                  KANPLA_EMAIL="$KANPLA_EMAIL" \
+                  KANPLA_PASSWORD="$KANPLA_PASSWORD" \
+                  ADMIN_SECRET_TOKEN="$ADMIN_SECRET_TOKEN" \
                   AUTO_REFRESH_MENU="true"
             else
               az containerapp create \
@@ -106,11 +113,11 @@ jobs:
                 --cpu 0.25 --memory 0.5Gi \
                 --min-replicas 0 --max-replicas 1 \
                 --env-vars \
-                  AZURE_STORAGE_CONNECTION_STRING="${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
-                  AZURE_STORAGE_CONTAINER_NAME="${{ secrets.AZURE_STORAGE_CONTAINER_NAME }}" \
-                  OPENAI_API_KEY="${{ secrets.OPENAI_API_KEY }}" \
-                  KANPLA_EMAIL="${{ secrets.KANPLA_EMAIL }}" \
-                  KANPLA_PASSWORD="${{ secrets.KANPLA_PASSWORD }}" \
-                  ADMIN_SECRET_TOKEN="${{ secrets.ADMIN_SECRET_TOKEN }}" \
+                  AZURE_STORAGE_CONNECTION_STRING="$AZURE_STORAGE_CONNECTION_STRING" \
+                  AZURE_STORAGE_CONTAINER_NAME="$AZURE_STORAGE_CONTAINER_NAME" \
+                  OPENAI_API_KEY="$OPENAI_API_KEY" \
+                  KANPLA_EMAIL="$KANPLA_EMAIL" \
+                  KANPLA_PASSWORD="$KANPLA_PASSWORD" \
+                  ADMIN_SECRET_TOKEN="$ADMIN_SECRET_TOKEN" \
                   AUTO_REFRESH_MENU="true"
             fi
