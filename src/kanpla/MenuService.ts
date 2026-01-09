@@ -3,8 +3,11 @@ import { getMenu } from "./getMenu";
 import { readMenuFromBlob, writeMenuToBlob } from "../storage/azureMenuStore";
 
 export class MenuService {
-  private cached: { items: MenuItem[]; etag?: string; loadedAtMs: number } | null =
-    null;
+  private cached: {
+    items: MenuItem[];
+    etag?: string;
+    loadedAtMs: number;
+  } | null = null;
 
   constructor() {
     // refresh the menu every day
@@ -19,7 +22,9 @@ export class MenuService {
     }
   }
 
-  private async loadMenu(force = false): Promise<{ items: MenuItem[]; etag?: string }> {
+  private async loadMenu(
+    force = false
+  ): Promise<{ items: MenuItem[]; etag?: string }> {
     const ttlMs = Number(process.env.MENU_CACHE_TTL_MS) || 30_000;
     if (!force && this.cached && Date.now() - this.cached.loadedAtMs < ttlMs) {
       return { items: this.cached.items, etag: this.cached.etag };
@@ -142,12 +147,44 @@ export class MenuService {
             }
             const imageBuffer = await imageResponse.arrayBuffer();
 
-            // Extract container name from SAS URL
-            const sasUrlObj = new URL(decodeURIComponent(sasUrl));
-            const containerName = sasUrlObj.pathname.split("/")[1]; // Extract container name from path
+            // Extract Blob Endpoint and Container Name
+            // If connection string format: BlobEndpoint=...;SharedAccessSignature=...
+            let baseUrl = "";
+            let sasToken = "";
+
+            if (
+              sasUrl.includes("BlobEndpoint=") &&
+              sasUrl.includes("SharedAccessSignature=")
+            ) {
+              const parts = sasUrl.split(";");
+              const blobEndpoint = parts
+                .find((p) => p.startsWith("BlobEndpoint="))
+                ?.slice("BlobEndpoint=".length);
+              const sas = parts
+                .find((p) => p.startsWith("SharedAccessSignature="))
+                ?.slice("SharedAccessSignature=".length);
+
+              if (blobEndpoint && sas) {
+                baseUrl = blobEndpoint.endsWith("/")
+                  ? blobEndpoint
+                  : `${blobEndpoint}/`;
+                sasToken = sas.startsWith("?") ? sas : `?${sas}`;
+              }
+            } else {
+              // Assume it is a direct SAS URL
+              const sasUrlObj = new URL(decodeURIComponent(sasUrl));
+              baseUrl = sasUrlObj.origin + sasUrlObj.pathname;
+              sasToken = sasUrlObj.search;
+            }
+
+            if (!baseUrl) {
+              throw new Error(
+                "Could not determine Blob base URL from connection string."
+              );
+            }
 
             // Create the full blob URL with SAS token for the new blob
-            const blobSasUrl = `${sasUrlObj.origin}${containerName}/${blobName}${sasUrlObj.search}`;
+            const blobSasUrl = `${baseUrl}${blobContainerName}/${blobName}${sasToken}`;
 
             console.log(
               `Uploading image for '${item.name}' to blob storage...`
@@ -249,7 +286,11 @@ export class MenuService {
     }
   }
 
-  async remakeAllImages(): Promise<{ success: boolean; updated: number; errors: number }> {
+  async remakeAllImages(): Promise<{
+    success: boolean;
+    updated: number;
+    errors: number;
+  }> {
     console.log("Starting image regeneration for all menu items...");
     let updated = 0;
     let errors = 0;
@@ -269,7 +310,10 @@ export class MenuService {
           const updatedItems = allItems.map((x) =>
             x.name === item.name ? { ...x, imageurl: newImageUrl } : x
           );
-          const res = await writeMenuToBlob({ items: updatedItems, ifMatch: etag });
+          const res = await writeMenuToBlob({
+            items: updatedItems,
+            ifMatch: etag,
+          });
           this.setCache(updatedItems, res.etag);
 
           updated++;
@@ -283,7 +327,9 @@ export class MenuService {
         }
       }
 
-      console.log(`Image regeneration complete. Updated: ${updated}, Errors: ${errors}`);
+      console.log(
+        `Image regeneration complete. Updated: ${updated}, Errors: ${errors}`
+      );
       return { success: true, updated, errors };
     } catch (error) {
       console.error("Error in remakeAllImages:", error);
