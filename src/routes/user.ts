@@ -1,12 +1,8 @@
 import { Hono } from "hono";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { getOrSetUser } from "../middleware/UserCookie";
-import { users } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { getOrSetUserCookie } from "../middleware/UserCookieMiddleware";
+import { getOrCreateUser, updateUser } from "../storage/azureUserStore";
 
 export const userRouter = new Hono();
-
-const db = drizzle(process.env.DATABASE_URL!);
 
 function sanitizeUserName(raw: unknown): string | null {
   if (typeof raw !== "string") return null;
@@ -18,7 +14,8 @@ function sanitizeUserName(raw: unknown): string | null {
 }
 
 userRouter.get("/score", async (c) => {
-  const user = await getOrSetUser(c, db);
+  const { cookie } = await getOrSetUserCookie(c.req.raw);
+  const user = await getOrCreateUser(cookie);
   return c.json({
     score: user?.score ?? 0,
     userName: user?.userName ?? "Guest",
@@ -26,14 +23,10 @@ userRouter.get("/score", async (c) => {
 });
 
 userRouter.post("/user/name", async (c) => {
-  const user = await getOrSetUser(c, db);
-  if (!user) return c.json({ error: "User not found" }, 400);
+  const { cookie } = await getOrSetUserCookie(c.req.raw);
   const { userName } = await c.req.json();
   const clean = sanitizeUserName(userName);
   if (!clean) return c.json({ error: "Invalid username" }, 400);
-  await db
-    .update(users)
-    .set({ userName: clean })
-    .where(eq(users.cookie, user.cookie));
+  await updateUser(cookie, (u) => ({ ...u, userName: clean }));
   return c.json({ success: true, userName: clean });
 });

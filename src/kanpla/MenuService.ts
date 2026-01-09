@@ -1,28 +1,36 @@
-import { drizzle } from "drizzle-orm/node-postgres";
-import { menuItems } from "../db/schema";
-import { desc, eq } from "drizzle-orm";
-import { Client } from "pg";
 import { MenuItem } from "../models/menuItem";
 import { getMenu } from "./getMenu";
+import { readMenuFromBlob, writeMenuToBlob } from "../storage/azureMenuStore";
 
 export class MenuService {
-  private db;
-  private client;
+  private cached: { items: MenuItem[]; etag?: string; loadedAtMs: number } | null =
+    null;
 
   constructor() {
-    this.client = new Client({
-      connectionString: process.env.DATABASE_URL,
-    });
-    this.client.connect();
-    this.db = drizzle(this.client);
-
     // refresh the menu every day
     const seconds = Number(process.env.REFRESH_MENU_SEC) || 60 * 60 * 24 * 1;
 
-    setInterval(async () => {
-      await this.refreshMenu();
-    }, seconds * 1000);
-    this.refreshMenu();
+    const autoRefresh = (process.env.AUTO_REFRESH_MENU ?? "false") !== "false";
+    if (autoRefresh) {
+      setInterval(async () => {
+        await this.refreshMenu();
+      }, seconds * 1000);
+      this.refreshMenu();
+    }
+  }
+
+  private async loadMenu(force = false): Promise<{ items: MenuItem[]; etag?: string }> {
+    const ttlMs = Number(process.env.MENU_CACHE_TTL_MS) || 30_000;
+    if (!force && this.cached && Date.now() - this.cached.loadedAtMs < ttlMs) {
+      return { items: this.cached.items, etag: this.cached.etag };
+    }
+    const res = await readMenuFromBlob();
+    this.cached = { items: res.items, etag: res.etag, loadedAtMs: Date.now() };
+    return res;
+  }
+
+  private setCache(items: MenuItem[], etag?: string) {
+    this.cached = { items, etag, loadedAtMs: Date.now() };
   }
 
   private async refreshMenu(): Promise<void> {
@@ -198,26 +206,13 @@ export class MenuService {
 
   async saveMenuItem(item: MenuItem): Promise<MenuItem | null> {
     try {
-      // Insert, ignore if name already exists
-      const inserted = await this.db
-        .insert(menuItems)
-        .values({
-          name: item.name,
-          date: item.date,
-          description: item.description,
-          type: item.type,
-          imageurl: item.imageurl,
-        })
-        .onConflictDoNothing()
-        .returning();
-      if (!inserted[0]) return null;
-      // Map DB row to MenuItem, fill missing fields with null/defaults
-      return {
-        ...inserted[0],
-        productId: item.productId ?? "",
-        moduleId: item.moduleId ?? "",
-        dateSeconds: item.dateSeconds ?? 0,
-      } as MenuItem;
+      const { items, etag } = await this.loadMenu();
+      if (items.some((x) => x.name === item.name)) return null;
+
+      const next = [...items, item];
+      const res = await writeMenuToBlob({ items: next, ifMatch: etag });
+      this.setCache(next, res.etag);
+      return item;
     } catch (error) {
       console.error("Error saving menu item:", error);
       return null;
@@ -239,17 +234,15 @@ export class MenuService {
 
   async getAllMenuItems(): Promise<MenuItem[]> {
     try {
-      const result = await this.db
-        .select()
-        .from(menuItems)
-        .orderBy(desc(menuItems.date));
-      // Map DB rows to MenuItem, fill missing fields with null/defaults
-      return result.map((row) => ({
-        ...row,
-        productId: "",
-        moduleId: "",
-        dateSeconds: 0,
-      })) as MenuItem[];
+      const { items } = await this.loadMenu();
+      // Preserve existing behavior: newest first (date is dd/mm/yyyy).
+      return [...items].sort((a, b) => {
+        const [ad, am, ay] = a.date.split("/").map(Number);
+        const [bd, bm, by] = b.date.split("/").map(Number);
+        const aTime = Date.UTC(ay || 0, (am || 1) - 1, ad || 1);
+        const bTime = Date.UTC(by || 0, (bm || 1) - 1, bd || 1);
+        return bTime - aTime;
+      });
     } catch (error) {
       console.error("Error fetching menu items:", error);
       return [];
@@ -263,7 +256,7 @@ export class MenuService {
 
     try {
       // Get all menu items
-      const allItems = await this.getAllMenuItems();
+      const { items: allItems, etag } = await this.loadMenu(true);
       console.log(`Found ${allItems.length} items to regenerate images for`);
 
       // Regenerate image for each item
@@ -272,11 +265,12 @@ export class MenuService {
           console.log(`Regenerating image for: ${item.name}`);
           const newImageUrl = await this.makeImage(item);
 
-          // Update the item in the database with the new image URL
-          await this.db
-            .update(menuItems)
-            .set({ imageurl: newImageUrl })
-            .where(eq(menuItems.name, item.name));
+          // Update in blob storage
+          const updatedItems = allItems.map((x) =>
+            x.name === item.name ? { ...x, imageurl: newImageUrl } : x
+          );
+          const res = await writeMenuToBlob({ items: updatedItems, ifMatch: etag });
+          this.setCache(updatedItems, res.etag);
 
           updated++;
           console.log(`✓ Updated image for: ${item.name}`);
@@ -298,7 +292,7 @@ export class MenuService {
   }
 
   async close(): Promise<void> {
-    await this.client.end();
+    // no-op
   }
 }
 

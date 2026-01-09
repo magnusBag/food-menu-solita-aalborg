@@ -8,11 +8,8 @@
     },
     "dependencies": {
         "@azure/storage-blob": "^12.26.0",
-        "@types/pg": "^8.15.5",
         "dotenv": "^17.2.1",
-        "drizzle-orm": "^0.44.4",
         "hono": "^4.0.0",
-        "pg": "^8.16.3",
         "react": "^18.2.0",
         "react-dom": "^18.2.0",
         "uuid": "^11.1.0"
@@ -22,7 +19,6 @@
         "@types/react": "^18.2.37",
         "@types/react-dom": "^18.2.15",
         "autoprefixer": "^10.4.21",
-        "drizzle-kit": "^0.31.4",
         "postcss": "^8.5.3",
         "tsx": "^4.20.3"
     }

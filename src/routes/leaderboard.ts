@@ -1,16 +1,10 @@
 import { Hono } from "hono";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { users } from "../db/schema";
-import { desc } from "drizzle-orm";
+import { getAllUsers } from "../storage/azureUserStore";
 
 export const leaderboardRouter = new Hono();
 
-const db = drizzle(process.env.DATABASE_URL!);
-
 leaderboardRouter.get("/leaderboard/api", async (c) => {
-  const results = await db
-    .select({ score: users.score, userName: users.userName })
-    .from(users)
-    .orderBy(desc(users.score));
-  return c.json(results);
+  const { users } = await getAllUsers();
+  const results = Object.values(users).sort((a, b) => b.score - a.score);
+  return c.json(results.map((u) => ({ score: u.score, userName: u.userName })));
 });
