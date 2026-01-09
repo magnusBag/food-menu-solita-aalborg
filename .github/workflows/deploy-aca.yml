@@ -115,14 +115,24 @@ jobs:
             # Wait a bit for propagation
             sleep 15
 
+            echo "Configuring Registry..."
+            az containerapp registry set \
+              -n "${AZURE_CONTAINERAPP_NAME}" \
+              -g "${AZURE_RESOURCE_GROUP}" \
+              --server "${ACR_LOGIN_SERVER}" \
+              --identity system
+
+            echo "Configuring Ingress..."
+            az containerapp ingress update \
+              -n "${AZURE_CONTAINERAPP_NAME}" \
+              -g "${AZURE_RESOURCE_GROUP}" \
+              --target-port 3000
+
             echo "Deploying Application..."
             az containerapp update \
               -g "${AZURE_RESOURCE_GROUP}" \
               -n "${AZURE_CONTAINERAPP_NAME}" \
               --image "${IMAGE_URI}" \
-              --target-port 3000 \
-              --registry-server "${ACR_LOGIN_SERVER}" \
-              --registry-identity system \
               --set-env-vars \
                 AZURE_STORAGE_CONNECTION_STRING="$AZURE_STORAGE_CONNECTION_STRING" \
                 AZURE_STORAGE_CONTAINER_NAME="$AZURE_STORAGE_CONTAINER_NAME" \
