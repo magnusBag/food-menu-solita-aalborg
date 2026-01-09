@@ -132,10 +132,7 @@ export class MenuService {
             // Check if the provided string is a SAS URL
 
             // Create a unique blob name
-            const blobName = `${blobContainerName}/${item.name.replace(
-              /[^a-zA-Z0-9]/g,
-              "-"
-            )}.png`;
+            const blobName = `${item.name.replace(/[^a-zA-Z0-9]/g, "-")}.png`;
 
             // Download the image from OpenAI
             console.log("Downloading image from OpenAI...");
@@ -147,10 +144,9 @@ export class MenuService {
             }
             const imageBuffer = await imageResponse.arrayBuffer();
 
-            // Extract Blob Endpoint and Container Name
-            // If connection string format: BlobEndpoint=...;SharedAccessSignature=...
-            let baseUrl = "";
-            let sasToken = "";
+            // Extract Blob Endpoint and Container Name and construct URLs
+            let blobSasUrl = "";
+            let publicBlobUrl = "";
 
             if (
               sasUrl.includes("BlobEndpoint=") &&
@@ -165,26 +161,44 @@ export class MenuService {
                 ?.slice("SharedAccessSignature=".length);
 
               if (blobEndpoint && sas) {
-                baseUrl = blobEndpoint.endsWith("/")
+                const endpoint = blobEndpoint.endsWith("/")
                   ? blobEndpoint
                   : `${blobEndpoint}/`;
-                sasToken = sas.startsWith("?") ? sas : `?${sas}`;
+                const sasToken = sas.startsWith("?") ? sas : `?${sas}`;
+                blobSasUrl = `${endpoint}${blobContainerName}/${blobName}${sasToken}`;
+                publicBlobUrl = `${endpoint}${blobContainerName}/${blobName}`;
               }
             } else {
               // Assume it is a direct SAS URL
               const sasUrlObj = new URL(decodeURIComponent(sasUrl));
-              baseUrl = sasUrlObj.origin + sasUrlObj.pathname;
-              sasToken = sasUrlObj.search;
+              const baseUrl = sasUrlObj.origin + sasUrlObj.pathname;
+              const sasToken = sasUrlObj.search;
+
+              // Check if container is already in path
+              if (
+                baseUrl.endsWith(`/${blobContainerName}`) ||
+                baseUrl.endsWith(`/${blobContainerName}/`)
+              ) {
+                const cleanBase = baseUrl.endsWith("/")
+                  ? baseUrl
+                  : `${baseUrl}/`;
+                // Container is already in base, just append blobName (filename)
+                blobSasUrl = `${cleanBase}${blobName}${sasToken}`;
+                publicBlobUrl = `${cleanBase}${blobName}`;
+              } else {
+                const cleanBase = baseUrl.endsWith("/")
+                  ? baseUrl
+                  : `${baseUrl}/`;
+                blobSasUrl = `${cleanBase}${blobContainerName}/${blobName}${sasToken}`;
+                publicBlobUrl = `${cleanBase}${blobContainerName}/${blobName}`;
+              }
             }
 
-            if (!baseUrl) {
+            if (!blobSasUrl) {
               throw new Error(
-                "Could not determine Blob base URL from connection string."
+                "Could not determine Blob URL from connection string."
               );
             }
-
-            // Create the full blob URL with SAS token for the new blob
-            const blobSasUrl = `${baseUrl}${blobContainerName}/${blobName}${sasToken}`;
 
             console.log(
               `Uploading image for '${item.name}' to blob storage...`
@@ -206,8 +220,6 @@ export class MenuService {
               );
             }
 
-            // Get the URL of the uploaded blob (without the SAS token for public access)
-            const publicBlobUrl = `${sasUrlObj.origin}${containerName}/${blobName}`;
             imageUrl = publicBlobUrl;
             console.log(`Image uploaded successfully to: ${publicBlobUrl}`);
           } catch (uploadError) {
@@ -297,24 +309,34 @@ export class MenuService {
 
     try {
       // Get all menu items
-      const { items: allItems, etag } = await this.loadMenu(true);
-      console.log(`Found ${allItems.length} items to regenerate images for`);
+      let { items: currentItems, etag } = await this.loadMenu(true);
+      console.log(
+        `Found ${currentItems.length} items to regenerate images for`
+      );
+
+      // Create a copy of items to iterate over, to ensure we process everyone
+      const itemsToProcess = [...currentItems];
 
       // Regenerate image for each item
-      for (const item of allItems) {
+      for (const item of itemsToProcess) {
         try {
           console.log(`Regenerating image for: ${item.name}`);
           const newImageUrl = await this.makeImage(item);
 
-          // Update in blob storage
-          const updatedItems = allItems.map((x) =>
+          // Update in local state
+          currentItems = currentItems.map((x) =>
             x.name === item.name ? { ...x, imageurl: newImageUrl } : x
           );
+
+          // Update in blob storage
           const res = await writeMenuToBlob({
-            items: updatedItems,
+            items: currentItems,
             ifMatch: etag,
           });
-          this.setCache(updatedItems, res.etag);
+
+          // Update etag and cache for next iteration
+          etag = res.etag;
+          this.setCache(currentItems, etag);
 
           updated++;
           console.log(`✓ Updated image for: ${item.name}`);
