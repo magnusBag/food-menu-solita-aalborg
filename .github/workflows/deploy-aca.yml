@@ -106,12 +106,12 @@ jobs:
             echo "Ensuring Identity permissions..."
             # Ensure identity exists (idempotent)
             az containerapp identity assign -n "${AZURE_CONTAINERAPP_NAME}" -g "${AZURE_RESOURCE_GROUP}" --system-assigned
-            
+
             PRINCIPAL_ID=$(az containerapp show -n "${AZURE_CONTAINERAPP_NAME}" -g "${AZURE_RESOURCE_GROUP}" --query identity.principalId -o tsv)
-            
+
             # Assign AcrPull role
             az role assignment create --assignee "$PRINCIPAL_ID" --role AcrPull --scope "$ACR_ID" || true
-            
+
             # Wait a bit for propagation
             sleep 15
 
