@@ -309,13 +309,13 @@ export class MenuService {
 
     try {
       // Get all menu items
-      let { items: currentItems, etag } = await this.loadMenu(true);
+      const { items: initialItems } = await this.loadMenu(true);
       console.log(
-        `Found ${currentItems.length} items to regenerate images for`
+        `Found ${initialItems.length} items to regenerate images for`
       );
 
       // Create a copy of items to iterate over, to ensure we process everyone
-      const itemsToProcess = [...currentItems];
+      const itemsToProcess = [...initialItems];
 
       // Regenerate image for each item
       for (const item of itemsToProcess) {
@@ -323,23 +323,54 @@ export class MenuService {
           console.log(`Regenerating image for: ${item.name}`);
           const newImageUrl = await this.makeImage(item);
 
-          // Update in local state
-          currentItems = currentItems.map((x) =>
-            x.name === item.name ? { ...x, imageurl: newImageUrl } : x
-          );
+          let saved = false;
+          let retryCount = 0;
+          const maxRetries = 3;
 
-          // Update in blob storage
-          const res = await writeMenuToBlob({
-            items: currentItems,
-            ifMatch: etag,
-          });
+          while (!saved && retryCount < maxRetries) {
+            try {
+              // Always load the latest menu state before updating to avoid 412 Precondition Failed
+              const { items: currentItems, etag } = await this.loadMenu(true);
 
-          // Update etag and cache for next iteration
-          etag = res.etag;
-          this.setCache(currentItems, etag);
+              // Update in new state
+              const updatedItems = currentItems.map((x) =>
+                x.name === item.name ? { ...x, imageurl: newImageUrl } : x
+              );
 
-          updated++;
-          console.log(`✓ Updated image for: ${item.name}`);
+              // Update in blob storage
+              const res = await writeMenuToBlob({
+                items: updatedItems,
+                ifMatch: etag,
+              });
+
+              // Update cache
+              this.setCache(updatedItems, res.etag);
+
+              updated++;
+              console.log(`✓ Updated image for: ${item.name}`);
+              saved = true;
+            } catch (err: any) {
+              // Handle Optimistic Concurrency Control failure
+              if (err?.statusCode === 412 || err?.code === "ConditionNotMet") {
+                console.warn(
+                  `Condition not met (412) for ${item.name}, retrying...`
+                );
+                retryCount++;
+                await new Promise((resolve) =>
+                  setTimeout(resolve, 500 + Math.random() * 500)
+                );
+              } else {
+                throw err;
+              }
+            }
+          }
+
+          if (!saved) {
+            console.error(
+              `Failed to save image for ${item.name} after ${maxRetries} retries`
+            );
+            errors++;
+          }
 
           // Add a small delay to avoid rate limiting
           await new Promise((resolve) => setTimeout(resolve, 2000));
